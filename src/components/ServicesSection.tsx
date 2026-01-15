@@ -6,12 +6,14 @@ import { Calendar, MapPin } from 'lucide-react'
 interface ServicesSectionProps {
   services: ServiceConfig[]
   bookingEnabled?: boolean
+  mercadopagoEnabled?: boolean
   location?: string
   whatsapp?: string
   email?: string
 }
 
-export default function ServicesSection({ services, bookingEnabled, location, whatsapp, email }: ServicesSectionProps) {
+export default function ServicesSection({ services, bookingEnabled, mercadopagoEnabled = true, location, whatsapp, email }: ServicesSectionProps) {
+  const effectiveBookingEnabled = bookingEnabled && mercadopagoEnabled
   const activeServices = services.filter(s => !s.paused)
 
   return (
@@ -25,7 +27,7 @@ export default function ServicesSection({ services, bookingEnabled, location, wh
             Nuestros Planes
           </h2>
           <p className="text-nude-500 mt-4 max-w-2xl mx-auto">
-            {bookingEnabled
+            {effectiveBookingEnabled
               ? 'Elegí el plan que mejor se adapte a tus objetivos y reservá tus clases online.'
               : 'Elegí el plan que mejor se adapte a tus objetivos y empezá a transformar tu cuerpo.'}
           </p>
@@ -37,7 +39,7 @@ export default function ServicesSection({ services, bookingEnabled, location, wh
             </p>
           )}
           
-          {bookingEnabled && activeServices.length > 0 && (
+          {effectiveBookingEnabled && activeServices.length > 0 && (
             <Link
               href="/reservar"
               className="inline-flex items-center gap-2 mt-6 px-6 py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-full font-medium transition-colors"
@@ -55,7 +57,7 @@ export default function ServicesSection({ services, bookingEnabled, location, wh
               className="animate-fade-in"
               style={{ animationDelay: `${index * 0.1}s` }}
             >
-              <ServiceCard service={service} bookingEnabled={bookingEnabled} location={location} whatsapp={whatsapp} email={email} />
+              <ServiceCard service={service} bookingEnabled={effectiveBookingEnabled} location={location} whatsapp={whatsapp} email={email} />
             </div>
           ))}
         </div>

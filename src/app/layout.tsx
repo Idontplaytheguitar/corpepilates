@@ -14,6 +14,9 @@ export async function generateMetadata(): Promise<Metadata> {
     title: `${config.site.siteName} | ${config.site.tagline}`,
     description: 'Pilates Reformer para todos. Fortalecé tu core, cuidá tu columna y transformá tu cuerpo con clases personalizadas.',
     keywords: 'pilates, reformer, core, columna, postura, fuerza, flexibilidad, clases, floresta, caba',
+    icons: {
+      icon: '/favicon.ico',
+    },
   }
 }
 

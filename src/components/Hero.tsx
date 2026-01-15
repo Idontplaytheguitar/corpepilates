@@ -4,9 +4,12 @@ import { Activity, Heart, Zap } from 'lucide-react'
 
 interface HeroProps {
   siteName?: string
+  bookingEnabled?: boolean
+  mercadopagoEnabled?: boolean
 }
 
-export default function Hero({ siteName = 'Corpe Pilates' }: HeroProps) {
+export default function Hero({ siteName = 'Corpe Pilates', bookingEnabled = true, mercadopagoEnabled = true }: HeroProps) {
+  const showReservationButton = bookingEnabled && mercadopagoEnabled
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       <div className="absolute inset-0 pattern-dots opacity-30" />
@@ -39,12 +42,14 @@ export default function Hero({ siteName = 'Corpe Pilates' }: HeroProps) {
             >
               Ver Planes
             </a>
-            <a
-              href="/reservar"
-              className="px-8 py-4 bg-white/70 backdrop-blur-sm border-2 border-rose-300 text-rose-700 rounded-full font-semibold hover:bg-rose-50 hover:border-rose-400 transition-all hover:-translate-y-1"
-            >
-              Reservar Clase
-            </a>
+            {showReservationButton && (
+              <a
+                href="/reservar"
+                className="px-8 py-4 bg-white/70 backdrop-blur-sm border-2 border-rose-300 text-rose-700 rounded-full font-semibold hover:bg-rose-50 hover:border-rose-400 transition-all hover:-translate-y-1"
+              >
+                Reservar Clase
+              </a>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-rose-600">
