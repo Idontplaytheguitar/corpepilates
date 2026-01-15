@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Save, Plus, Trash2, Eye, EyeOff, Lock, Check, AlertCircle, Loader2, Image as ImageIcon, CreditCard, Link2, Unlink, Key, Mail, Pause, Play, Calendar, Clock, X, LogOut } from 'lucide-react'
-import type { FullConfig, ProductConfig, ServiceConfig, SiteConfig, BookingConfig, RecurringSchedule, DateException, Reservation } from '@/data/config'
+import type { FullConfig, ProductConfig, ServiceConfig, SiteConfig, BookingConfig, RecurringSchedule, DateException, Reservation, PackConfig } from '@/data/config'
 import { defaultConfig, formatPrice } from '@/data/config'
 import ScheduleEditor from '@/components/admin/ScheduleEditor'
 
@@ -37,10 +37,11 @@ export default function AdminPage() {
   const [site, setSite] = useState<SiteConfig>(defaultConfig.site)
   const [products, setProducts] = useState<ProductConfig[]>(defaultConfig.products)
   const [services, setServices] = useState<ServiceConfig[]>(defaultConfig.services)
+  const [packs, setPacks] = useState<PackConfig[]>(defaultConfig.packs || [])
   const [booking, setBooking] = useState<BookingConfig>(defaultConfig.booking!)
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [orders, setOrders] = useState<{ id: string; items: { name: string; quantity: number; price: number }[]; serviceItems: { name: string; quantity: number; price: number }[]; selectedSlots: { serviceName?: string; date: string; time: string; status?: 'pending' | 'completed' | 'absent' }[]; customer: { name: string; email: string; phone: string }; total: number; status: string; deliveryStatus?: 'pending' | 'delivered'; createdAt: number }[]>([])
-  const [activeTab, setActiveTab] = useState<'site' | 'products' | 'services' | 'booking' | 'pedidos' | 'mercadopago'>('site')
+  const [activeTab, setActiveTab] = useState<'site' | 'products' | 'services' | 'packs' | 'booking' | 'pedidos' | 'mercadopago'>('site')
   const [selectedOrder, setSelectedOrder] = useState<typeof orders[0] | null>(null)
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const [configLoaded, setConfigLoaded] = useState(false)
@@ -77,6 +78,7 @@ export default function AdminPage() {
         if (data.site) setSite(data.site)
         if (data.products) setProducts(data.products)
         if (data.services) setServices(data.services)
+        if (data.packs) setPacks(data.packs)
         if (data.booking) setBooking(data.booking)
         setConfigLoaded(true)
       })
@@ -151,7 +153,7 @@ export default function AdminPage() {
     setSaveStatus('idle')
 
     try {
-      const config: FullConfig = { site, products, services, booking }
+      const config: FullConfig = { site, products, services, packs, booking }
       const res = await fetch('/api/admin/config', {
         method: 'POST',
         headers: {
@@ -229,6 +231,32 @@ export default function AdminPage() {
 
   const removeService = (index: number) => {
     setServices(services.filter((_, i) => i !== index))
+    markChanged()
+  }
+
+  const addPack = () => {
+    const newPack: PackConfig = {
+      id: `pack-${Date.now()}`,
+      name: '',
+      description: '',
+      classCount: 4,
+      price: 0,
+      validityDays: 30,
+      image: '',
+    }
+    setPacks([...packs, newPack])
+    markChanged()
+  }
+
+  const updatePack = (index: number, updates: Partial<PackConfig>) => {
+    const updated = [...packs]
+    updated[index] = { ...updated[index], ...updates }
+    setPacks(updated)
+    markChanged()
+  }
+
+  const removePack = (index: number) => {
+    setPacks(packs.filter((_, i) => i !== index))
     markChanged()
   }
 
@@ -345,7 +373,7 @@ export default function AdminPage() {
 
           <div className="overflow-x-auto shadow-sm mt-2 scrollbar-thin">
             <div className="flex border-b border-cream-200 min-w-max">
-              {(['site', 'products', 'services', 'booking', 'pedidos', 'mercadopago'] as const).map(tab => (
+              {(['site', 'products', 'services', 'packs', 'booking', 'pedidos', 'mercadopago'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -358,6 +386,7 @@ export default function AdminPage() {
                   {tab === 'site' && '⚙️ Negocio'}
                   {tab === 'products' && '🛍️ Productos'}
                   {tab === 'services' && '💆 Servicios'}
+                  {tab === 'packs' && '📦 Packs'}
                   {tab === 'booking' && '📅 Reservas'}
                   {tab === 'pedidos' && '📦 Pedidos'}
                   {tab === 'mercadopago' && '💳 MercadoPago'}
@@ -432,6 +461,54 @@ export default function AdminPage() {
                         <p className="text-sm text-nude-500">Mostrá la sección de productos en la página principal</p>
                       </div>
                     </label>
+                  </div>
+                </div>
+
+                <div className="border-t border-cream-200 pt-6 mt-6">
+                  <h3 className="font-display text-lg font-semibold text-rose-800 mb-4">
+                    💳 Pagos y Reservas
+                  </h3>
+                  
+                  <div className="space-y-3">
+                    <div className="p-4 bg-cream-50 rounded-xl border border-cream-200">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={site.mercadopagoEnabled !== false}
+                          onChange={e => { setSite({ ...site, mercadopagoEnabled: e.target.checked }); markChanged() }}
+                          className="w-5 h-5 rounded border-cream-300 text-rose-500 focus:ring-rose-400"
+                        />
+                        <div>
+                          <span className="font-medium text-rose-800">Habilitar MercadoPago y reservas</span>
+                          <p className="text-sm text-nude-500">Permite que los usuarios paguen y reserven online</p>
+                        </div>
+                      </label>
+                    </div>
+                    
+                    {site.mercadopagoEnabled !== false && (
+                      <div className="p-4 bg-cream-50 rounded-xl border border-cream-200 ml-4">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={site.singleClassEnabled !== false}
+                            onChange={e => { setSite({ ...site, singleClassEnabled: e.target.checked }); markChanged() }}
+                            className="w-5 h-5 rounded border-cream-300 text-rose-500 focus:ring-rose-400"
+                          />
+                          <div>
+                            <span className="font-medium text-rose-800">Permitir clase suelta</span>
+                            <p className="text-sm text-nude-500">Los usuarios pueden comprar una clase individual sin registrarse</p>
+                          </div>
+                        </label>
+                      </div>
+                    )}
+                    
+                    {site.mercadopagoEnabled === false && (
+                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                        <p className="text-sm text-amber-700">
+                          Con MercadoPago desactivado, los usuarios solo podrán ver la info y contactarte por WhatsApp. Las reservas y pagos los gestionás vos manualmente.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -773,6 +850,40 @@ export default function AdminPage() {
               </div>
             )}
 
+            {activeTab === 'packs' && (
+              <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <h2 className="font-display text-xl font-semibold text-rose-800">Packs de Clases</h2>
+                    <p className="text-nude-500 text-sm mt-1">Packs de clases que los usuarios pueden comprar y luego agendar</p>
+                  </div>
+                  <button
+                    onClick={addPack}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-violet-500 text-white rounded-xl hover:bg-violet-600 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Agregar Pack
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {packs.map((pack, index) => (
+                    <PackEditor
+                      key={pack.id}
+                      pack={pack}
+                      onUpdate={updates => updatePack(index, updates)}
+                      onRemove={() => removePack(index)}
+                    />
+                  ))}
+                  {packs.length === 0 && (
+                    <div className="text-center py-12 text-nude-400">
+                      No hay packs. Hacé clic en "Agregar Pack" para empezar.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {activeTab === 'booking' && (
               <div className="space-y-6">
                 <div>
@@ -798,13 +909,37 @@ export default function AdminPage() {
                 </div>
 
                 {booking.enabled && (
-                  <ScheduleEditor
-                    recurring={booking.recurring || []}
-                    exceptions={booking.exceptions || []}
-                    reservations={reservations}
-                    onUpdateRecurring={(recurring) => { setBooking({ ...booking, recurring }); markChanged() }}
-                    onUpdateExceptions={(exceptions) => { setBooking({ ...booking, exceptions }); markChanged() }}
-                  />
+                  <>
+                    <div className="p-4 bg-sage-50 rounded-xl border border-sage-200">
+                      <label className="block text-sm font-medium text-sage-700 mb-2">
+                        🛏️ Cantidad de camas/reformers
+                      </label>
+                      <p className="text-xs text-nude-500 mb-3">
+                        Cuántas personas pueden reservar el mismo horario simultáneamente
+                      </p>
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="number"
+                          min={1}
+                          max={20}
+                          value={booking.bedsCapacity || 1}
+                          onChange={e => { setBooking({ ...booking, bedsCapacity: parseInt(e.target.value) || 1 }); markChanged() }}
+                          className="w-24 px-3 py-2 rounded-lg border border-sage-200 focus:border-sage-400 outline-none text-center text-lg font-semibold"
+                        />
+                        <span className="text-sm text-sage-600">
+                          Cada horario permite hasta {booking.bedsCapacity || 1} reserva{(booking.bedsCapacity || 1) > 1 ? 's' : ''} simultánea{(booking.bedsCapacity || 1) > 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    </div>
+
+                    <ScheduleEditor
+                      recurring={booking.recurring || []}
+                      exceptions={booking.exceptions || []}
+                      reservations={reservations}
+                      onUpdateRecurring={(recurring) => { setBooking({ ...booking, recurring }); markChanged() }}
+                      onUpdateExceptions={(exceptions) => { setBooking({ ...booking, exceptions }); markChanged() }}
+                    />
+                  </>
                 )}
               </div>
             )}
@@ -1733,6 +1868,167 @@ function ServiceEditor({
               placeholder="Describí brevemente el servicio..."
               rows={2}
               className="w-full px-3 py-2 rounded-lg border border-sage-200 focus:border-sage-400 outline-none resize-none"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function PackEditor({
+  pack,
+  onUpdate,
+  onRemove,
+}: {
+  pack: PackConfig
+  onUpdate: (updates: Partial<PackConfig>) => void
+  onRemove: () => void
+}) {
+  const [uploading, setUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploading(true)
+    const formData = new FormData()
+    formData.append('file', file)
+
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: formData })
+      const data = await res.json()
+      if (data.url) {
+        onUpdate({ image: data.url })
+      } else {
+        alert(data.error || 'Error al subir imagen')
+      }
+    } catch {
+      alert('Error al subir imagen')
+    } finally {
+      setUploading(false)
+    }
+  }
+
+  return (
+    <div className={`p-4 sm:p-5 rounded-xl border ${pack.paused ? 'bg-amber-50 border-amber-200' : 'bg-violet-50 border-violet-200'}`}>
+      {pack.paused && (
+        <div className="flex items-center gap-2 text-amber-700 text-sm mb-3 font-medium">
+          <Pause className="w-4 h-4" />
+          Pack pausado - no visible para los usuarios
+        </div>
+      )}
+      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+        <div className="flex-shrink-0 mx-auto sm:mx-0">
+          <div 
+            className={`w-24 h-24 rounded-xl bg-white border-2 border-dashed flex items-center justify-center overflow-hidden cursor-pointer transition-colors ${pack.paused ? 'border-amber-300 hover:border-amber-400 opacity-60' : 'border-violet-300 hover:border-violet-400'}`}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            {uploading ? (
+              <Loader2 className="w-6 h-6 text-violet-400 animate-spin" />
+            ) : pack.image ? (
+              <img src={pack.image} alt="" className="w-full h-full object-cover" />
+            ) : (
+              <div className="text-center p-2">
+                <ImageIcon className="w-6 h-6 text-violet-300 mx-auto" />
+                <span className="text-xs text-violet-400 mt-1 block">Subir foto</span>
+              </div>
+            )}
+          </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleImageUpload}
+            className="hidden"
+          />
+        </div>
+
+        <div className="flex-1 space-y-3">
+          <div className="flex items-center gap-3">
+            <input
+              type="text"
+              value={pack.name}
+              onChange={e => onUpdate({ name: e.target.value })}
+              placeholder="Nombre del pack (ej: Pack 8 Clases)"
+              className="flex-1 px-3 py-2 rounded-lg border border-violet-200 focus:border-violet-400 outline-none text-violet-800 font-medium"
+            />
+            <button
+              onClick={onRemove}
+              className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+              title="Eliminar pack"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            <div>
+              <label className="block text-xs text-nude-500 mb-1">Cantidad de clases</label>
+              <input
+                type="number"
+                value={pack.classCount || ''}
+                onChange={e => onUpdate({ classCount: parseInt(e.target.value) || 0 })}
+                placeholder="4"
+                min={1}
+                className="w-full px-3 py-2 rounded-lg border border-violet-200 focus:border-violet-400 outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-xs text-nude-500 mb-1">Precio (ARS)</label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-nude-400">$</span>
+                <input
+                  type="number"
+                  value={pack.price || ''}
+                  onChange={e => onUpdate({ price: parseInt(e.target.value) || 0 })}
+                  placeholder="0"
+                  className="w-full pl-7 pr-3 py-2 rounded-lg border border-violet-200 focus:border-violet-400 outline-none"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="block text-xs text-nude-500 mb-1">Validez (días)</label>
+              <input
+                type="number"
+                value={pack.validityDays || ''}
+                onChange={e => onUpdate({ validityDays: parseInt(e.target.value) || 30 })}
+                placeholder="30"
+                min={1}
+                className="w-full px-3 py-2 rounded-lg border border-violet-200 focus:border-violet-400 outline-none"
+              />
+            </div>
+            <div className="flex items-end">
+              <button
+                type="button"
+                onClick={() => onUpdate({ paused: !pack.paused })}
+                className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  pack.paused
+                    ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                    : 'bg-violet-100 text-violet-700 hover:bg-violet-200'
+                }`}
+              >
+                {pack.paused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
+                {pack.paused ? 'Activar' : 'Pausar'}
+              </button>
+            </div>
+          </div>
+
+          {pack.price > 0 && pack.classCount > 0 && (
+            <p className="text-xs text-violet-600">
+              Precio por clase: {formatPrice(Math.round(pack.price / pack.classCount))}
+            </p>
+          )}
+
+          <div>
+            <label className="block text-xs text-nude-500 mb-1">Descripción</label>
+            <textarea
+              value={pack.description}
+              onChange={e => onUpdate({ description: e.target.value })}
+              placeholder="Describí brevemente el pack..."
+              rows={2}
+              className="w-full px-3 py-2 rounded-lg border border-violet-200 focus:border-violet-400 outline-none resize-none"
             />
           </div>
         </div>

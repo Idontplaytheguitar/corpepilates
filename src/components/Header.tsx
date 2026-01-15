@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ShoppingBag, Menu, X, Settings } from 'lucide-react'
+import { ShoppingBag, Menu, X, Settings, User, LogOut, Calendar, Package } from 'lucide-react'
 import { useCart } from '@/context/CartContext'
+import { useUser } from '@/context/UserContext'
 import Cart from './Cart'
 
 interface HeaderProps {
@@ -15,8 +16,10 @@ interface HeaderProps {
 export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates Reformer', productsEnabled = false }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
   const { itemCount, setIsOpen } = useCart()
+  const { user, loading: userLoading, login, logout } = useUser()
 
   useEffect(() => {
     const handleScroll = () => {
@@ -65,6 +68,7 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
 
             <nav className="hidden md:flex items-center gap-8">
               <NavLink href="/#servicios">Planes</NavLink>
+              <NavLink href="/packs">Packs</NavLink>
               {productsEnabled && <NavLink href="/#productos">Productos</NavLink>}
               <NavLink href="/#sobre-mi">Sobre Nosotros</NavLink>
               <NavLink href="/#contacto">Contacto</NavLink>
@@ -79,6 +83,74 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
                 >
                   <Settings className="w-5 h-5 text-rose-600" />
                 </Link>
+              )}
+              
+              {!userLoading && (
+                user ? (
+                  <div className="relative">
+                    <button
+                      onClick={() => setUserMenuOpen(!userMenuOpen)}
+                      className="flex items-center gap-2 p-1.5 rounded-full hover:bg-rose-100 transition-colors"
+                    >
+                      {user.picture ? (
+                        <img src={user.picture} alt="" className="w-8 h-8 rounded-full" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-rose-100 flex items-center justify-center">
+                          <User className="w-4 h-4 text-rose-600" />
+                        </div>
+                      )}
+                    </button>
+                    
+                    {userMenuOpen && (
+                      <>
+                        <div 
+                          className="fixed inset-0 z-40" 
+                          onClick={() => setUserMenuOpen(false)}
+                        />
+                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-cream-200 py-2 z-50">
+                          <div className="px-4 py-2 border-b border-cream-100">
+                            <p className="font-medium text-rose-800 truncate">{user.name}</p>
+                            <p className="text-xs text-nude-500 truncate">{user.email}</p>
+                          </div>
+                          <Link
+                            href="/mi-cuenta"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-rose-50 text-rose-800"
+                          >
+                            <Calendar className="w-4 h-4" />
+                            Mis Clases
+                          </Link>
+                          <Link
+                            href="/packs"
+                            onClick={() => setUserMenuOpen(false)}
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-rose-50 text-rose-800"
+                          >
+                            <Package className="w-4 h-4" />
+                            Comprar Pack
+                          </Link>
+                          <button
+                            onClick={() => {
+                              logout()
+                              setUserMenuOpen(false)
+                            }}
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-rose-50 text-rose-800 w-full"
+                          >
+                            <LogOut className="w-4 h-4" />
+                            Cerrar sesión
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => login()}
+                    className="hidden sm:flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                  >
+                    <User className="w-4 h-4" />
+                    Ingresar
+                  </button>
+                )
               )}
               
               <button
@@ -113,6 +185,9 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
               <MobileNavLink href="/#servicios" onClick={() => setMobileMenuOpen(false)}>
                 Planes
               </MobileNavLink>
+              <MobileNavLink href="/packs" onClick={() => setMobileMenuOpen(false)}>
+                📦 Packs de Clases
+              </MobileNavLink>
               {productsEnabled && (
                 <MobileNavLink href="/#productos" onClick={() => setMobileMenuOpen(false)}>
                   Productos
@@ -124,6 +199,19 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
               <MobileNavLink href="/#contacto" onClick={() => setMobileMenuOpen(false)}>
                 Contacto
               </MobileNavLink>
+              {user && (
+                <MobileNavLink href="/mi-cuenta" onClick={() => setMobileMenuOpen(false)}>
+                  📅 Mis Clases
+                </MobileNavLink>
+              )}
+              {!user && !userLoading && (
+                <button
+                  onClick={() => { login(); setMobileMenuOpen(false) }}
+                  className="text-rose-800 hover:text-rose-500 transition-colors font-medium py-2 px-4 rounded-lg hover:bg-rose-50 text-left"
+                >
+                  🔑 Ingresar
+                </button>
+              )}
               {isAdmin && (
                 <MobileNavLink href="/admin" onClick={() => setMobileMenuOpen(false)}>
                   ⚙️ Administración

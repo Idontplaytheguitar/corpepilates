@@ -7,6 +7,8 @@ export interface SiteConfig {
   location?: string
   deliveryMode?: 'pickup' | 'shipping' | 'both'
   productsEnabled?: boolean
+  mercadopagoEnabled?: boolean
+  singleClassEnabled?: boolean
 }
 
 export interface ProductConfig {
@@ -52,6 +54,7 @@ export interface ServiceConfig {
 
 export interface BookingConfig {
   enabled: boolean
+  bedsCapacity?: number
   recurring: RecurringSchedule[]
   exceptions: DateException[]
 }
@@ -72,6 +75,54 @@ export interface Reservation {
   createdAt: number
 }
 
+export interface PackConfig {
+  id: string
+  name: string
+  description: string
+  classCount: number
+  price: number
+  validityDays: number
+  image: string
+  paused?: boolean
+}
+
+export interface User {
+  id: string
+  email: string
+  name: string
+  picture?: string
+  googleId: string
+  createdAt: number
+}
+
+export interface UserPack {
+  id: string
+  packId: string
+  packName: string
+  userId: string
+  classesRemaining: number
+  classesUsed: number
+  expiresAt: number
+  purchasedAt: number
+  paymentId?: string
+  status: 'active' | 'expired' | 'exhausted'
+}
+
+export interface ScheduledClass {
+  id: string
+  oderId?: string
+  userId?: string
+  userPackId?: string
+  date: string
+  time: string
+  endTime: string
+  customerName: string
+  customerEmail: string
+  customerPhone: string
+  status: 'scheduled' | 'completed' | 'cancelled' | 'absent'
+  createdAt: number
+}
+
 export interface CartItem {
   type: 'product' | 'service'
   id: string
@@ -87,6 +138,7 @@ export interface FullConfig {
   site: SiteConfig
   products: ProductConfig[]
   services: ServiceConfig[]
+  packs: PackConfig[]
   booking?: BookingConfig
 }
 
@@ -105,13 +157,17 @@ export const defaultConfig: FullConfig = {
     location: 'Avenida Segurola 386, Floresta, CABA',
     deliveryMode: 'pickup',
     productsEnabled: false,
+    mercadopagoEnabled: true,
+    singleClassEnabled: true,
   },
   booking: {
     enabled: true,
+    bedsCapacity: 4,
     recurring: defaultRecurring,
     exceptions: [],
   },
   products: [],
+  packs: [],
   services: [
     {
       id: 'plan-1x',

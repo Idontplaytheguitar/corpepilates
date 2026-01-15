@@ -25,6 +25,8 @@ function ReservarContent() {
   const [recurring, setRecurring] = useState<RecurringSchedule[]>([])
   const [exceptions, setExceptions] = useState<DateException[]>([])
   const [bookingEnabled, setBookingEnabled] = useState(false)
+  const [mercadopagoEnabled, setMercadopagoEnabled] = useState(true)
+  const [singleClassEnabled, setSingleClassEnabled] = useState(true)
   const [selectedService, setSelectedService] = useState<ServiceConfig | null>(null)
   const [selectedDate, setSelectedDate] = useState<string>('')
   const [selectedTime, setSelectedTime] = useState<string>('')
@@ -50,6 +52,8 @@ function ReservarContent() {
         setServices(activeServices)
         setSiteConfig(data.site || null)
         setBookingEnabled(data.booking?.enabled || false)
+        setMercadopagoEnabled(data.site?.mercadopagoEnabled !== false)
+        setSingleClassEnabled(data.site?.singleClassEnabled !== false)
         setRecurring(data.booking?.recurring || [])
         setExceptions(data.booking?.exceptions || [])
 
@@ -166,7 +170,7 @@ function ReservarContent() {
     })
   }
 
-  if (!bookingEnabled) {
+  if (!bookingEnabled || !mercadopagoEnabled) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 to-cream-100 pt-24 pb-12 px-4">
         <div className="max-w-2xl mx-auto text-center">
@@ -176,11 +180,47 @@ function ReservarContent() {
               Reservas no disponibles
             </h1>
             <p className="text-nude-500 mb-6">
-              El sistema de reservas online no está habilitado en este momento.
+              El sistema de reservas online no está habilitado en este momento. Contactanos para coordinar tu clase.
             </p>
-            <Link href="/" className="inline-flex items-center gap-2 text-rose-500 hover:text-rose-600">
-              <ArrowLeft className="w-4 h-4" />
-              Volver al inicio
+            {siteConfig?.whatsapp && (
+              <a 
+                href={`https://wa.me/${siteConfig.whatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-green-500 text-white rounded-xl font-semibold hover:bg-green-600 transition-colors mb-4"
+              >
+                Consultar por WhatsApp
+              </a>
+            )}
+            <div>
+              <Link href="/" className="inline-flex items-center gap-2 text-rose-500 hover:text-rose-600">
+                <ArrowLeft className="w-4 h-4" />
+                Volver al inicio
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!singleClassEnabled) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 to-cream-100 pt-24 pb-12 px-4">
+        <div className="max-w-2xl mx-auto text-center">
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <Calendar className="w-16 h-16 text-nude-300 mx-auto mb-4" />
+            <h1 className="font-display text-2xl font-semibold text-rose-800 mb-2">
+              Clases por pack
+            </h1>
+            <p className="text-nude-500 mb-6">
+              Para tomar clases necesitás comprar un pack. Con tu pack podés agendar las clases que quieras.
+            </p>
+            <Link 
+              href="/packs"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-violet-500 text-white rounded-xl font-semibold hover:bg-violet-600 transition-colors"
+            >
+              Ver Packs disponibles
             </Link>
           </div>
         </div>

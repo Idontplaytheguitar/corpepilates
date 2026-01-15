@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getStoredConfig, getReservationsByDate } from '@/lib/storage'
+import { getStoredConfig, getReservationsByDate, getScheduledClassesByDate, getOrders } from '@/lib/storage'
 import { parseTime, formatTime } from '@/data/config'
 import type { TimeSlot } from '@/data/config'
+
+export const dynamic = 'force-dynamic'
 
 function subtractBlockedSlots(recurring: TimeSlot[], blocked: TimeSlot[]): TimeSlot[] {
   if (blocked.length === 0) return recurring
@@ -49,7 +51,7 @@ export async function GET(request: NextRequest) {
     const date = searchParams.get('date')
     const serviceId = searchParams.get('serviceId')
 
-    if (!date || !serviceId) {
+    if (!date) {
       return NextResponse.json({ error: 'Faltan parámetros' }, { status: 400 })
     }
 
@@ -59,12 +61,17 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Las reservas no están habilitadas' }, { status: 400 })
     }
 
-    const service = config.services.find(s => s.id === serviceId)
-    if (!service) {
-      return NextResponse.json({ error: 'Servicio no encontrado' }, { status: 400 })
+    let serviceDuration = 60
+    let service = null
+    
+    if (serviceId) {
+      service = config.services.find(s => s.id === serviceId)
+      if (service) {
+        serviceDuration = service.durationMinutes || 60
+      }
     }
-
-    const serviceDuration = service.durationMinutes || 60
+    
+    const bedsCapacity = config.booking.bedsCapacity || 1
 
     const dateObj = new Date(date + 'T12:00:00')
     const dayOfWeek = dateObj.getDay()
@@ -96,12 +103,28 @@ export async function GET(request: NextRequest) {
     }
 
     const existingReservations = await getReservationsByDate(date)
-    const reservedRanges = existingReservations.map(r => ({
-      start: parseTime(r.time),
-      end: parseTime(r.endTime || r.time) || parseTime(r.time) + 60
-    }))
+    const scheduledClasses = await getScheduledClassesByDate(date)
+    const orders = await getOrders()
+    
+    const getOccupancyAtTime = (time: string): number => {
+      let count = 0
+      
+      count += existingReservations.filter(r => r.time === time && r.status === 'confirmed').length
+      count += scheduledClasses.filter(c => c.time === time && c.status === 'scheduled').length
+      count += orders.flatMap(o => 
+        o.selectedSlots.filter(s => 
+          s.date === date && 
+          s.time === time && 
+          s.status !== 'absent' && 
+          s.status !== 'completed'
+        )
+      ).length
+      
+      return count
+    }
 
     const availableSlots: string[] = []
+    const spotsLeft: Record<string, number> = {}
 
     for (const slot of daySlots) {
       const slotStart = parseTime(slot.start)
@@ -109,23 +132,21 @@ export async function GET(request: NextRequest) {
 
       let currentTime = slotStart
       while (currentTime + serviceDuration <= slotEnd) {
-        const slotEndTime = currentTime + serviceDuration
+        const timeStr = formatTime(currentTime)
+        const occupancy = getOccupancyAtTime(timeStr)
+        const remaining = bedsCapacity - occupancy
         
-        const isReserved = reservedRanges.some(reserved => 
-          (currentTime >= reserved.start && currentTime < reserved.end) ||
-          (slotEndTime > reserved.start && slotEndTime <= reserved.end) ||
-          (currentTime <= reserved.start && slotEndTime >= reserved.end)
-        )
-
-        if (!isReserved) {
+        if (remaining > 0) {
           if (selectedDate.toDateString() === today.toDateString()) {
             const now = new Date()
             const currentMinutes = now.getHours() * 60 + now.getMinutes()
             if (currentTime > currentMinutes + 60) {
-              availableSlots.push(formatTime(currentTime))
+              availableSlots.push(timeStr)
+              spotsLeft[timeStr] = remaining
             }
           } else {
-            availableSlots.push(formatTime(currentTime))
+            availableSlots.push(timeStr)
+            spotsLeft[timeStr] = remaining
           }
         }
 
@@ -135,12 +156,16 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ 
       slots: availableSlots,
-      service: {
-        id: service.id,
-        name: service.name,
-        price: service.price,
-        duration: serviceDuration
-      }
+      spotsLeft,
+      bedsCapacity,
+      ...(service && {
+        service: {
+          id: service.id,
+          name: service.name,
+          price: service.price,
+          duration: serviceDuration
+        }
+      })
     })
   } catch (error) {
     console.error('Error getting slots:', error)

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { CartProvider } from '@/context/CartContext'
+import { UserProvider } from '@/context/UserContext'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
 import { getStoredConfig } from '@/lib/storage'
@@ -26,13 +27,15 @@ export default async function RootLayout({
   return (
     <html lang="es">
       <body className="antialiased">
-        <CartProvider>
-          <Header siteName={config.site.siteName} tagline={config.site.tagline} productsEnabled={config.site.productsEnabled} />
-          <main className="min-h-screen">
-            {children}
-          </main>
-          <Footer config={config.site} />
-        </CartProvider>
+        <UserProvider>
+          <CartProvider>
+            <Header siteName={config.site.siteName} tagline={config.site.tagline} productsEnabled={config.site.productsEnabled} />
+            <main className="min-h-screen">
+              {children}
+            </main>
+            <Footer config={config.site} />
+          </CartProvider>
+        </UserProvider>
       </body>
     </html>
   )
