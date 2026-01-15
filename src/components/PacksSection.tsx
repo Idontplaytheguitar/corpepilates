@@ -179,8 +179,8 @@ export default function PacksSection({ packs, whatsapp, packsEnabled = true, mer
                     </span>
                   </div>
                   
-                  {mercadopagoEnabled ? (
-                    <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2">
+                    {mercadopagoEnabled && (
                       <button
                         onClick={() => handlePurchase(pack.id)}
                         disabled={purchasing === pack.id}
@@ -197,29 +197,20 @@ export default function PacksSection({ packs, whatsapp, packsEnabled = true, mer
                           'Ingresar y comprar'
                         )}
                       </button>
-                      {!user && whatsapp && (
-                        <a
-                          href={getWhatsAppLink(pack)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-3 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-colors"
-                          title="Consultar por WhatsApp"
-                        >
-                          <MessageCircle className="w-5 h-5" />
-                        </a>
-                      )}
-                    </div>
-                  ) : (
-                    <a
-                      href={getWhatsAppLink(pack)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 px-4 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-medium transition-colors w-full"
-                    >
-                      <MessageCircle className="w-5 h-5" />
-                      Consultar por WhatsApp
-                    </a>
-                  )}
+                    )}
+                    {whatsapp && (
+                      <a
+                        href={getWhatsAppLink(pack)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`${mercadopagoEnabled ? 'p-3' : 'flex-1 flex items-center justify-center gap-2 px-4 py-3'} bg-green-500 hover:bg-green-600 text-white rounded-xl transition-colors`}
+                        title="Consultar por WhatsApp"
+                      >
+                        <MessageCircle className="w-5 h-5" />
+                        {!mercadopagoEnabled && <span>Consultar por WhatsApp</span>}
+                      </a>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
