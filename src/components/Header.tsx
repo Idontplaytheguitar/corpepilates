@@ -12,9 +12,10 @@ interface HeaderProps {
   tagline?: string
   productsEnabled?: boolean
   packsEnabled?: boolean
+  mercadopagoEnabled?: boolean
 }
 
-export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates Reformer', productsEnabled = false, packsEnabled = true }: HeaderProps) {
+export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates Reformer', productsEnabled = false, packsEnabled = true, mercadopagoEnabled = true }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -86,7 +87,7 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
                 </Link>
               )}
               
-              {packsEnabled && !userLoading && (
+              {packsEnabled && mercadopagoEnabled && !userLoading && (
                 user ? (
                   <div className="relative">
                     <button
@@ -202,12 +203,12 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
               <MobileNavLink href="/#contacto" onClick={() => setMobileMenuOpen(false)}>
                 Contacto
               </MobileNavLink>
-              {packsEnabled && user && (
+              {packsEnabled && mercadopagoEnabled && user && (
                 <MobileNavLink href="/mi-cuenta" onClick={() => setMobileMenuOpen(false)}>
                   Mis Clases
                 </MobileNavLink>
               )}
-              {packsEnabled && !user && !userLoading && (
+              {packsEnabled && mercadopagoEnabled && !user && !userLoading && (
                 <button
                   onClick={() => { login(); setMobileMenuOpen(false) }}
                   className="text-rose-800 hover:text-rose-500 transition-colors font-medium py-2 px-4 rounded-lg hover:bg-rose-50 text-left"
