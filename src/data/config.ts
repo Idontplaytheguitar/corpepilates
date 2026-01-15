@@ -167,7 +167,35 @@ export const defaultConfig: FullConfig = {
     exceptions: [],
   },
   products: [],
-  packs: [],
+  packs: [
+    {
+      id: 'pack-4',
+      name: 'Pack 4 Clases',
+      description: 'Ideal para probar. Comprá 4 clases y agendá cuando quieras dentro de los 30 días.',
+      classCount: 4,
+      price: 28000,
+      validityDays: 30,
+      image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&h=400&fit=crop',
+    },
+    {
+      id: 'pack-8',
+      name: 'Pack 8 Clases',
+      description: 'El más popular. 8 clases para usar en 45 días con total flexibilidad de horarios.',
+      classCount: 8,
+      price: 52000,
+      validityDays: 45,
+      image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&h=400&fit=crop',
+    },
+    {
+      id: 'pack-12',
+      name: 'Pack 12 Clases',
+      description: 'Máximo ahorro. 12 clases para usar en 60 días. Ideal para entrenar regularmente.',
+      classCount: 12,
+      price: 72000,
+      validityDays: 60,
+      image: 'https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=400&h=400&fit=crop',
+    },
+  ],
   services: [
     {
       id: 'plan-1x',

@@ -68,7 +68,7 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
 
             <nav className="hidden md:flex items-center gap-8">
               <NavLink href="/#servicios">Planes</NavLink>
-              <NavLink href="/packs">Packs</NavLink>
+              <NavLink href="/#packs">Packs</NavLink>
               {productsEnabled && <NavLink href="/#productos">Productos</NavLink>}
               <NavLink href="/#sobre-mi">Sobre Nosotros</NavLink>
               <NavLink href="/#contacto">Contacto</NavLink>
@@ -185,7 +185,7 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
               <MobileNavLink href="/#servicios" onClick={() => setMobileMenuOpen(false)}>
                 Planes
               </MobileNavLink>
-              <MobileNavLink href="/packs" onClick={() => setMobileMenuOpen(false)}>
+              <MobileNavLink href="/#packs" onClick={() => setMobileMenuOpen(false)}>
                 📦 Packs de Clases
               </MobileNavLink>
               {productsEnabled && (

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ArrowLeft, Check, Loader2, Calendar, Clock, AlertCircle } from 'lucide-react'
+import { ArrowLeft, Check, Loader2, Calendar, Clock, AlertCircle, MessageCircle, User } from 'lucide-react'
 import { formatPrice } from '@/data/config'
 import type { PackConfig, SiteConfig } from '@/data/config'
 import Link from 'next/link'
@@ -57,10 +57,19 @@ function PacksContent() {
         setError(data.error || 'Error al procesar la compra')
       }
     } catch {
-      setError('Error de conexión')
+      setError('Error de conexi?n')
     }
     
     setPurchasing(null)
+  }
+
+  const getWhatsAppLink = (pack?: PackConfig) => {
+    if (pack) {
+      const message = `Hola! ?? Me interesa comprar el *${pack.name}*:\n\n?? ${pack.classCount} clases\n?? ${formatPrice(pack.price)}\n?? V?lido por ${pack.validityDays} d?as\n\n?C?mo puedo adquirirlo?`
+      return `https://wa.me/${siteConfig?.whatsapp}?text=${encodeURIComponent(message)}`
+    }
+    const message = `Hola! ?? Me interesa comprar un pack de clases. ?Podr?an darme m?s informaci?n?`
+    return `https://wa.me/${siteConfig?.whatsapp}?text=${encodeURIComponent(message)}`
   }
 
   if (loading) {
@@ -81,7 +90,7 @@ function PacksContent() {
               Packs no disponibles
             </h1>
             <p className="text-nude-500 mb-6">
-              La compra de packs online no está habilitada en este momento. Contactanos para más información.
+              La compra de packs online no est? habilitada en este momento. Contactanos para m?s informaci?n.
             </p>
             {siteConfig?.whatsapp && (
               <a 
@@ -111,14 +120,14 @@ function PacksContent() {
             Packs de Clases
           </h1>
           <p className="text-nude-500 mt-2">
-            Comprá un pack y agendá tus clases cuando quieras
+            Compr? un pack y agend? tus clases cuando quieras
           </p>
         </div>
 
         {packError && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 text-red-700">
             <AlertCircle className="w-5 h-5 flex-shrink-0" />
-            <p>Hubo un error con el pago. Por favor intentá nuevamente.</p>
+            <p>Hubo un error con el pago. Por favor intent? nuevamente.</p>
           </div>
         )}
 
@@ -130,11 +139,41 @@ function PacksContent() {
         )}
 
         {!userLoading && !user && (
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-            <p className="text-blue-700">
-              Para comprar un pack necesitás iniciar sesión con tu cuenta de Google. 
-              Esto te permite agendar tus clases y ver tu historial.
-            </p>
+          <div className="mb-6 p-5 bg-gradient-to-r from-violet-50 to-blue-50 border border-violet-200 rounded-xl">
+            <div className="flex items-start gap-4">
+              <div className="p-2 bg-violet-100 rounded-lg">
+                <User className="w-6 h-6 text-violet-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold text-violet-800 mb-1">?Por qu? iniciar sesi?n?</h3>
+                <p className="text-violet-700 text-sm mb-3">
+                  Al iniciar sesi?n con Google pod?s comprar packs online, agendar tus clases cuando quieras y ver tu historial de reservas.
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  <button
+                    onClick={() => login('/packs')}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white rounded-lg text-sm font-medium transition-colors"
+                  >
+                    <User className="w-4 h-4" />
+                    Iniciar sesi?n con Google
+                  </button>
+                  {siteConfig?.whatsapp && (
+                    <a
+                      href={getWhatsAppLink()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      <MessageCircle className="w-4 h-4" />
+                      Contratar por WhatsApp
+                    </a>
+                  )}
+                </div>
+                <p className="text-violet-600 text-xs mt-3">
+                  Tambi?n pod?s <Link href="/reservar" className="underline hover:text-violet-800">agendar clases individuales</Link> sin necesidad de cuenta.
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
@@ -168,18 +207,18 @@ function PacksContent() {
                   </div>
                   <div className="flex items-center gap-2 text-sm text-sage-700">
                     <Clock className="w-4 h-4" />
-                    <span>Válido por {pack.validityDays} días</span>
+                    <span>V?lido por {pack.validityDays} d?as</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-sage-700">
                     <Calendar className="w-4 h-4" />
-                    <span>Agendás cuando quieras</span>
+                    <span>Agend?s cuando quieras</span>
                   </div>
                 </div>
                 
                 <div className="pt-4 border-t border-cream-200">
                   <div className="flex items-end justify-between mb-4">
                     <div>
-                      <p className="text-2xl font-bold text-rose-600">
+                      <p className="text-2xl font-bold text-violet-600">
                         {formatPrice(pack.price)}
                       </p>
                       {pack.classCount > 0 && (
@@ -190,22 +229,35 @@ function PacksContent() {
                     </div>
                   </div>
                   
-                  <button
-                    onClick={() => handlePurchase(pack.id)}
-                    disabled={purchasing === pack.id}
-                    className="w-full py-3 bg-violet-500 hover:bg-violet-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {purchasing === pack.id ? (
-                      <>
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Procesando...
-                      </>
-                    ) : user ? (
-                      'Comprar Pack'
-                    ) : (
-                      'Iniciar sesión y comprar'
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handlePurchase(pack.id)}
+                      disabled={purchasing === pack.id}
+                      className="flex-1 py-3 bg-violet-500 hover:bg-violet-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                    >
+                      {purchasing === pack.id ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Procesando...
+                        </>
+                      ) : user ? (
+                        'Comprar'
+                      ) : (
+                        'Ingresar y comprar'
+                      )}
+                    </button>
+                    {!user && siteConfig?.whatsapp && (
+                      <a
+                        href={getWhatsAppLink(pack)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="p-3 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-colors"
+                        title="Contratar por WhatsApp"
+                      >
+                        <MessageCircle className="w-5 h-5" />
+                      </a>
                     )}
-                  </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -219,7 +271,7 @@ function PacksContent() {
               No hay packs disponibles
             </h2>
             <p className="text-nude-400">
-              Contactanos para más información sobre nuestros packs.
+              Contactanos para m?s informaci?n sobre nuestros packs.
             </p>
           </div>
         )}
