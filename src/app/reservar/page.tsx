@@ -223,7 +223,7 @@ function ReservarContent() {
               Para tomar clases necesitás comprar un pack. Con tu pack podés agendar las clases que quieras.
             </p>
             <Link 
-              href="/packs"
+              href="/#packs"
               className="inline-flex items-center gap-2 px-6 py-3 bg-violet-500 text-white rounded-xl font-semibold hover:bg-violet-600 transition-colors"
             >
               Ver Packs disponibles

@@ -20,12 +20,12 @@ export default async function Home() {
         whatsapp={config.site.whatsapp}
         email={config.site.email}
       />
-      {config.site.packsEnabled !== false && (
-        <PacksSection 
-          packs={config.packs}
-          whatsapp={config.site.whatsapp}
-        />
-      )}
+      <PacksSection 
+        packs={config.packs}
+        whatsapp={config.site.whatsapp}
+        packsEnabled={config.site.packsEnabled !== false}
+        mercadopagoEnabled={config.site.mercadopagoEnabled !== false}
+      />
       {config.site.productsEnabled && (
         <ProductsSection 
           products={config.products}

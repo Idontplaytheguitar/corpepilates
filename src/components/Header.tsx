@@ -121,14 +121,14 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
                             <Calendar className="w-4 h-4" />
                             Mis Clases
                           </Link>
-                          <Link
-                            href="/packs"
+                          <a
+                            href="/#packs"
                             onClick={() => setUserMenuOpen(false)}
                             className="flex items-center gap-3 px-4 py-2 hover:bg-rose-50 text-rose-800"
                           >
                             <Package className="w-4 h-4" />
                             Comprar Pack
-                          </Link>
+                          </a>
                           <button
                             onClick={() => {
                               logout()

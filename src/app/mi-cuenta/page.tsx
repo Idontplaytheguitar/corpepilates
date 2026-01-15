@@ -309,7 +309,7 @@ function MiCuentaContent() {
                       <Package className="w-12 h-12 text-nude-300 mx-auto mb-4" />
                       <p className="text-nude-500 mb-4">No tenés packs activos</p>
                       <Link
-                        href="/packs"
+                        href="/#packs"
                         className="inline-flex items-center gap-2 px-4 py-2 bg-violet-500 text-white rounded-lg font-medium hover:bg-violet-600 transition-colors"
                       >
                         Ver packs disponibles
