@@ -71,6 +71,8 @@ export interface Reservation {
   customerName: string
   customerEmail: string
   customerPhone: string
+  customerAge?: string
+  customerHealthConditions?: string
   paymentId?: string
   status: 'pending' | 'confirmed' | 'cancelled'
   createdAt: number

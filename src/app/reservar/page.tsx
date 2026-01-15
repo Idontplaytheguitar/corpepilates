@@ -38,7 +38,9 @@ function ReservarContent() {
   const [customer, setCustomer] = useState({
     name: '',
     email: '',
-    phone: ''
+    phone: '',
+    age: '',
+    healthConditions: ''
   })
   
   const [submitting, setSubmitting] = useState(false)
@@ -83,16 +85,20 @@ function ReservarContent() {
 
   const handleSubmit = async () => {
     if (!selectedService || !selectedDate || !selectedTime) return
-    if (!customer.name || !customer.email || !customer.phone) {
-      setError('Completá todos los campos')
+    if (!customer.name || !customer.email || !customer.phone || !customer.age) {
+      setError('Completa todos los campos obligatorios')
       return
     }
     if (!validateEmail(customer.email)) {
-      setError('Ingresá un email válido')
+      setError('Ingresa un email valido')
       return
     }
     if (!validatePhone(customer.phone)) {
-      setError('Ingresá un número de teléfono válido (8-15 dígitos)')
+      setError('Ingresa un numero de telefono valido (8-15 digitos)')
+      return
+    }
+    if (parseInt(customer.age) <= 0 || parseInt(customer.age) > 120) {
+      setError('Ingresa una edad valida')
       return
     }
 
@@ -539,7 +545,7 @@ function ReservarContent() {
                 <div>
                   <label className="block text-sm font-medium text-rose-700 mb-1">
                     <Phone className="w-4 h-4 inline mr-1" />
-                    Teléfono / WhatsApp
+                    Telefono / WhatsApp
                   </label>
                   <input
                     type="tel"
@@ -555,9 +561,35 @@ function ReservarContent() {
                   {customer.phone && !validatePhone(customer.phone) && (
                     <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" />
-                      Número inválido (8-15 dígitos)
+                      Numero invalido (8-15 digitos)
                     </p>
                   )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-rose-700 mb-1">
+                    Edad
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    max={120}
+                    value={customer.age}
+                    onChange={e => setCustomer({ ...customer, age: e.target.value })}
+                    placeholder="Tu edad"
+                    className="w-full px-4 py-3 rounded-xl border border-cream-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-rose-700 mb-1">
+                    Tenes dolencias, lesiones o patologias?
+                  </label>
+                  <textarea
+                    value={customer.healthConditions}
+                    onChange={e => setCustomer({ ...customer, healthConditions: e.target.value })}
+                    placeholder="Ej: No / Tengo dolor lumbar / Operacion de rodilla..."
+                    rows={2}
+                    className="w-full px-4 py-3 rounded-xl border border-cream-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none resize-none"
+                  />
                 </div>
               </div>
 
@@ -567,7 +599,7 @@ function ReservarContent() {
 
               <button
                 onClick={handleSubmit}
-                disabled={submitting || !customer.name || !customer.email || !customer.phone || !validateEmail(customer.email) || !validatePhone(customer.phone)}
+                disabled={submitting || !customer.name || !customer.email || !customer.phone || !customer.age || !validateEmail(customer.email) || !validatePhone(customer.phone)}
                 className="w-full mt-6 py-4 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {submitting ? (

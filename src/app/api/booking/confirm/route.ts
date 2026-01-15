@@ -49,9 +49,11 @@ export async function POST(request: NextRequest) {
         </div>
         <div style="background: #f1f5f9; padding: 20px; border-radius: 12px;">
           <h4 style="margin-top: 0;">Datos del cliente:</h4>
-          <p><strong>👤 Nombre:</strong> ${reservation.customerName}</p>
-          <p><strong>📧 Email:</strong> ${reservation.customerEmail}</p>
-          <p><strong>📱 Teléfono:</strong> ${reservation.customerPhone}</p>
+          <p><strong>Nombre:</strong> ${reservation.customerName}</p>
+          <p><strong>Email:</strong> ${reservation.customerEmail}</p>
+          <p><strong>Telefono:</strong> ${reservation.customerPhone}</p>
+          ${reservation.customerAge ? `<p><strong>Edad:</strong> ${reservation.customerAge} anos</p>` : ''}
+          ${reservation.customerHealthConditions ? `<p><strong>Condiciones de salud:</strong> ${reservation.customerHealthConditions}</p>` : ''}
         </div>
       </div>
     `

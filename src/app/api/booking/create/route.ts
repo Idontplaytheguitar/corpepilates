@@ -56,6 +56,8 @@ export async function POST(request: NextRequest) {
       customerName: customer.name,
       customerEmail: customer.email,
       customerPhone: customer.phone,
+      customerAge: customer.age,
+      customerHealthConditions: customer.healthConditions,
       status: 'pending',
       createdAt: Date.now(),
     }

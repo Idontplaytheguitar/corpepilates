@@ -768,15 +768,31 @@ export default function AdminPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h2 className="font-display text-xl font-semibold text-rose-800">Tus Planes</h2>
-                    <p className="text-nude-500 text-sm mt-1">Planes de clases de Pilates que ofrecés</p>
+                    <p className="text-nude-500 text-sm mt-1">Planes de clases de Pilates que ofreces</p>
                   </div>
                   <button
                     onClick={addService}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-sage-500 text-white rounded-xl hover:bg-sage-600 transition-colors"
+                    disabled={site.singleClassEnabled === false}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-sage-500 text-white rounded-xl hover:bg-sage-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-4 h-4" />
                     Agregar Servicio
                   </button>
+                </div>
+
+                <div className="p-4 bg-sage-50 rounded-xl border border-sage-200">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={site.singleClassEnabled !== false}
+                      onChange={e => { setSite({ ...site, singleClassEnabled: e.target.checked }); markChanged() }}
+                      className="w-5 h-5 rounded border-sage-300 text-sage-500 focus:ring-sage-400"
+                    />
+                    <div>
+                      <span className="font-medium text-sage-800">Habilitar clases individuales</span>
+                      <p className="text-sm text-nude-500">Permite que los usuarios reserven clases sueltas pagando por MercadoPago</p>
+                    </div>
+                  </label>
                 </div>
 
                 <div className="space-y-4">
@@ -1281,8 +1297,23 @@ export default function AdminPage() {
                 <div>
                   <h2 className="font-display text-xl font-semibold text-rose-800">MercadoPago</h2>
                   <p className="text-nude-500 text-sm mt-1">
-                    Configuración de pagos y comisiones
+                    Configuracion de pagos y comisiones
                   </p>
+                </div>
+
+                <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={site.mercadopagoEnabled !== false}
+                      onChange={e => { setSite({ ...site, mercadopagoEnabled: e.target.checked }); markChanged() }}
+                      className="w-5 h-5 rounded border-blue-300 text-blue-500 focus:ring-blue-400"
+                    />
+                    <div>
+                      <span className="font-medium text-blue-800">Habilitar pagos con MercadoPago</span>
+                      <p className="text-sm text-nude-500">Permite cobrar por productos, planes y packs mediante MercadoPago</p>
+                    </div>
+                  </label>
                 </div>
 
                 {!feeStatus.developmentPaid && (
