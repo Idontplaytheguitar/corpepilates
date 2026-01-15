@@ -70,9 +70,11 @@ export async function POST(request: NextRequest) {
         </div>
         <div style="background: #f1f5f9; padding: 20px; border-radius: 12px;">
           <h4 style="margin-top: 0;">Datos del cliente:</h4>
-          <p><strong>👤 Nombre:</strong> ${customer.name}</p>
-          <p><strong>📧 Email:</strong> ${customer.email}</p>
-          <p><strong>📱 Teléfono:</strong> ${customer.phone}</p>
+          <p><strong>Nombre:</strong> ${customer.name}</p>
+          <p><strong>Email:</strong> ${customer.email}</p>
+          <p><strong>Telefono:</strong> ${customer.phone}</p>
+          ${customer.age ? `<p><strong>Edad:</strong> ${customer.age} anos</p>` : ''}
+          ${customer.healthConditions ? `<p><strong>Condiciones de salud:</strong> ${customer.healthConditions}</p>` : ''}
         </div>
       </div>
     `

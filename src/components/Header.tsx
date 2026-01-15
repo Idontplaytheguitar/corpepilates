@@ -235,12 +235,28 @@ function smoothScrollTo(targetId: string) {
   
   const headerOffset = 80
   const elementPosition = element.getBoundingClientRect().top
-  const offsetPosition = elementPosition + window.pageYOffset - headerOffset
+  const startPosition = window.pageYOffset
+  const targetPosition = startPosition + elementPosition - headerOffset
+  const distance = targetPosition - startPosition
+  const duration = 800
+  let startTime: number | null = null
+
+  function animation(currentTime: number) {
+    if (startTime === null) startTime = currentTime
+    const timeElapsed = currentTime - startTime
+    const progress = Math.min(timeElapsed / duration, 1)
+    const easeInOutCubic = progress < 0.5
+      ? 4 * progress * progress * progress
+      : 1 - Math.pow(-2 * progress + 2, 3) / 2
+    
+    window.scrollTo(0, startPosition + distance * easeInOutCubic)
+    
+    if (timeElapsed < duration) {
+      requestAnimationFrame(animation)
+    }
+  }
   
-  window.scrollTo({
-    top: offsetPosition,
-    behavior: 'smooth'
-  })
+  requestAnimationFrame(animation)
 }
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {

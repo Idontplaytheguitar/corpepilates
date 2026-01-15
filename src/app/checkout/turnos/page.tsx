@@ -26,6 +26,8 @@ interface CheckoutData {
     name: string
     email: string
     phone: string
+    age?: string
+    healthConditions?: string
   }
 }
 
@@ -501,10 +503,18 @@ export default function CheckoutTurnosPage() {
 
               <div className="pt-4">
                 <p className="text-sm text-nude-500 mb-2">Datos del cliente</p>
-                <div className="text-sm text-nude-700">
+                <div className="text-sm text-nude-700 space-y-1">
                   <p>{checkoutData.customer.name}</p>
                   <p>{checkoutData.customer.email}</p>
                   <p>{checkoutData.customer.phone}</p>
+                  {checkoutData.customer.age && (
+                    <p>Edad: {checkoutData.customer.age} anos</p>
+                  )}
+                  {checkoutData.customer.healthConditions && (
+                    <p className="text-xs text-nude-500">
+                      Condiciones: {checkoutData.customer.healthConditions}
+                    </p>
+                  )}
                 </div>
               </div>
 

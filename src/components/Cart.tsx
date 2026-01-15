@@ -40,6 +40,8 @@ export default function Cart() {
     name: '',
     email: '',
     phone: '',
+    age: '',
+    healthConditions: '',
   })
 
   useEffect(() => {
@@ -63,11 +65,16 @@ export default function Cart() {
   }
 
   const isValidForm = () => {
-    return customerData.name && 
+    const baseValid = customerData.name && 
            customerData.email && 
            validateEmail(customerData.email) && 
            customerData.phone && 
            validatePhone(customerData.phone)
+    
+    if (hasServices) {
+      return baseValid && customerData.age && parseInt(customerData.age) > 0
+    }
+    return baseValid
   }
 
   const handleCheckout = async (e: React.FormEvent) => {
@@ -308,7 +315,7 @@ export default function Cart() {
                 <div>
                   <input
                     type="tel"
-                    placeholder="Teléfono / WhatsApp"
+                    placeholder="Telefono / WhatsApp"
                     required
                     value={customerData.phone}
                     onChange={e => setCustomerData(prev => ({ ...prev, phone: e.target.value }))}
@@ -321,10 +328,37 @@ export default function Cart() {
                   {customerData.phone && !validatePhone(customerData.phone) && (
                     <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
                       <AlertCircle className="w-3 h-3" />
-                      Número inválido (8-15 dígitos)
+                      Numero invalido (8-15 digitos)
                     </p>
                   )}
                 </div>
+
+                {hasServices && (
+                  <>
+                    <input
+                      type="number"
+                      placeholder="Edad"
+                      required
+                      min={1}
+                      max={120}
+                      value={customerData.age}
+                      onChange={e => setCustomerData(prev => ({ ...prev, age: e.target.value }))}
+                      className="w-full px-4 py-3 rounded-xl border border-cream-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none transition-all"
+                    />
+                    <div>
+                      <label className="block text-sm text-nude-600 mb-2">
+                        Tenes dolencias, lesiones o patologias?
+                      </label>
+                      <textarea
+                        placeholder="Ej: No / Tengo dolor lumbar / Operacion de rodilla..."
+                        value={customerData.healthConditions}
+                        onChange={e => setCustomerData(prev => ({ ...prev, healthConditions: e.target.value }))}
+                        rows={2}
+                        className="w-full px-4 py-3 rounded-xl border border-cream-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none transition-all resize-none"
+                      />
+                    </div>
+                  </>
+                )}
 
                 {items.length > 0 && siteConfig && (
                   <div className="p-3 bg-sage-50 rounded-lg text-sm text-sage-700 flex items-center gap-2">

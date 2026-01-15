@@ -29,7 +29,7 @@ export interface Order {
   items: OrderItem[]
   serviceItems: OrderItem[]
   selectedSlots: OrderSlot[]
-  customer: { name: string; email: string; phone: string }
+  customer: { name: string; email: string; phone: string; age?: string; healthConditions?: string }
   total: number
   status: 'pending' | 'confirmed' | 'cancelled'
   deliveryStatus?: 'pending' | 'delivered'

@@ -445,96 +445,6 @@ export default function AdminPage() {
 
                 <div className="border-t border-cream-200 pt-6 mt-6">
                   <h3 className="font-display text-lg font-semibold text-rose-800 mb-4">
-                    🛍️ Productos
-                  </h3>
-                  
-                  <div className="p-4 bg-cream-50 rounded-xl border border-cream-200">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={site.productsEnabled || false}
-                        onChange={e => { setSite({ ...site, productsEnabled: e.target.checked }); markChanged() }}
-                        className="w-5 h-5 rounded border-cream-300 text-rose-500 focus:ring-rose-400"
-                      />
-                      <div>
-                        <span className="font-medium text-rose-800">Habilitar venta de productos</span>
-                        <p className="text-sm text-nude-500">Mostrá la sección de productos en la página principal</p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="border-t border-cream-200 pt-6 mt-6">
-                  <h3 className="font-display text-lg font-semibold text-rose-800 mb-4">
-                    📦 Packs de Clases
-                  </h3>
-                  
-                  <div className="p-4 bg-cream-50 rounded-xl border border-cream-200">
-                    <label className="flex items-center gap-3 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={site.packsEnabled !== false}
-                        onChange={e => { setSite({ ...site, packsEnabled: e.target.checked }); markChanged() }}
-                        className="w-5 h-5 rounded border-cream-300 text-violet-500 focus:ring-violet-400"
-                      />
-                      <div>
-                        <span className="font-medium text-rose-800">Habilitar venta de packs</span>
-                        <p className="text-sm text-nude-500">Mostrá los packs de clases en la web y permite su compra</p>
-                      </div>
-                    </label>
-                  </div>
-                </div>
-
-                <div className="border-t border-cream-200 pt-6 mt-6">
-                  <h3 className="font-display text-lg font-semibold text-rose-800 mb-4">
-                    💳 Pagos y Reservas
-                  </h3>
-                  
-                  <div className="space-y-3">
-                    <div className="p-4 bg-cream-50 rounded-xl border border-cream-200">
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={site.mercadopagoEnabled !== false}
-                          onChange={e => { setSite({ ...site, mercadopagoEnabled: e.target.checked }); markChanged() }}
-                          className="w-5 h-5 rounded border-cream-300 text-rose-500 focus:ring-rose-400"
-                        />
-                        <div>
-                          <span className="font-medium text-rose-800">Habilitar MercadoPago y reservas</span>
-                          <p className="text-sm text-nude-500">Permite que los usuarios paguen y reserven online</p>
-                        </div>
-                      </label>
-                    </div>
-                    
-                    {site.mercadopagoEnabled !== false && (
-                      <div className="p-4 bg-cream-50 rounded-xl border border-cream-200 ml-4">
-                        <label className="flex items-center gap-3 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            checked={site.singleClassEnabled !== false}
-                            onChange={e => { setSite({ ...site, singleClassEnabled: e.target.checked }); markChanged() }}
-                            className="w-5 h-5 rounded border-cream-300 text-rose-500 focus:ring-rose-400"
-                          />
-                          <div>
-                            <span className="font-medium text-rose-800">Permitir clase suelta</span>
-                            <p className="text-sm text-nude-500">Los usuarios pueden comprar una clase individual sin registrarse</p>
-                          </div>
-                        </label>
-                      </div>
-                    )}
-                    
-                    {site.mercadopagoEnabled === false && (
-                      <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
-                        <p className="text-sm text-amber-700">
-                          Con MercadoPago desactivado, los usuarios solo podrán ver la info y contactarte por WhatsApp. Las reservas y pagos los gestionás vos manualmente.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="border-t border-cream-200 pt-6 mt-6">
-                  <h3 className="font-display text-lg font-semibold text-rose-800 mb-4">
                     📍 Ubicación y Entregas
                   </h3>
                   
@@ -808,15 +718,31 @@ export default function AdminPage() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div>
                     <h2 className="font-display text-xl font-semibold text-rose-800">Tus Productos</h2>
-                    <p className="text-nude-500 text-sm mt-1">Accesorios, ropa, equipamiento y productos que vendés</p>
+                    <p className="text-nude-500 text-sm mt-1">Accesorios, ropa, equipamiento y productos que vendes</p>
                   </div>
                   <button
                     onClick={addProduct}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-rose-500 text-white rounded-xl hover:bg-rose-600 transition-colors"
+                    disabled={!site.productsEnabled}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-rose-500 text-white rounded-xl hover:bg-rose-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-4 h-4" />
                     Agregar Producto
                   </button>
+                </div>
+
+                <div className="p-4 bg-cream-50 rounded-xl border border-cream-200">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={site.productsEnabled || false}
+                      onChange={e => { setSite({ ...site, productsEnabled: e.target.checked }); markChanged() }}
+                      className="w-5 h-5 rounded border-cream-300 text-rose-500 focus:ring-rose-400"
+                    />
+                    <div>
+                      <span className="font-medium text-rose-800">Habilitar venta de productos</span>
+                      <p className="text-sm text-nude-500">Muestra la seccion de productos en la pagina principal</p>
+                    </div>
+                  </label>
                 </div>
 
                 <div className="space-y-4">
@@ -880,11 +806,27 @@ export default function AdminPage() {
                   </div>
                   <button
                     onClick={addPack}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-violet-500 text-white rounded-xl hover:bg-violet-600 transition-colors"
+                    disabled={site.packsEnabled === false}
+                    className="flex items-center justify-center gap-2 px-4 py-2 bg-violet-500 text-white rounded-xl hover:bg-violet-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Plus className="w-4 h-4" />
                     Agregar Pack
                   </button>
+                </div>
+
+                <div className="p-4 bg-violet-50 rounded-xl border border-violet-200">
+                  <label className="flex items-center gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={site.packsEnabled !== false}
+                      onChange={e => { setSite({ ...site, packsEnabled: e.target.checked }); markChanged() }}
+                      className="w-5 h-5 rounded border-violet-300 text-violet-500 focus:ring-violet-400"
+                    />
+                    <div>
+                      <span className="font-medium text-violet-800">Habilitar venta de packs</span>
+                      <p className="text-sm text-nude-500">Muestra los packs en la web y permite su compra. Tambien habilita el ingreso con Google.</p>
+                    </div>
+                  </label>
                 </div>
 
                 <div className="space-y-4">
