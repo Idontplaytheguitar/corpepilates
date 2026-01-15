@@ -1,0 +1,110 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Lato:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-playfair: 'Playfair Display', serif;
+  --font-lato: 'Lato', sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-lato);
+  background: linear-gradient(135deg, #fefdfb 0%, #fdf8f0 50%, #fff5f5 100%);
+  min-height: 100vh;
+}
+
+.font-display {
+  font-family: var(--font-playfair);
+}
+
+@layer utilities {
+  .text-gradient {
+    background: linear-gradient(135deg, #c98b6c 0%, #e85d5d 50%, #c44d4d 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .glass-strong {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+}
+
+.pattern-dots {
+  background-image: radial-gradient(circle, #e8c9b8 1px, transparent 1px);
+  background-size: 30px 30px;
+}
+
+.animate-stagger > * {
+  animation: slideUp 0.6s ease-out forwards;
+  opacity: 0;
+}
+
+.animate-stagger > *:nth-child(1) { animation-delay: 0.1s; }
+.animate-stagger > *:nth-child(2) { animation-delay: 0.2s; }
+.animate-stagger > *:nth-child(3) { animation-delay: 0.3s; }
+.animate-stagger > *:nth-child(4) { animation-delay: 0.4s; }
+.animate-stagger > *:nth-child(5) { animation-delay: 0.5s; }
+.animate-stagger > *:nth-child(6) { animation-delay: 0.6s; }
+
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 20px 40px -10px rgba(200, 139, 108, 0.3);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #fdf8f0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #d9a88f, #c98b6c);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #c98b6c, #e85d5d);
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  height: 4px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #e0d5cc;
+  border-radius: 2px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #c98b6c;
+}
+
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: #e0d5cc transparent;
+}

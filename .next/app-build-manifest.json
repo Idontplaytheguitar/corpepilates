@@ -1,0 +1,98 @@
+{
+  "pages": {
+    "/_not-found/page": [
+      "static/chunks/webpack-616e068a201ad621.js",
+      "static/chunks/fd9d1056-a3721692288cfd9a.js",
+      "static/chunks/117-c341fae7ea9c9c9c.js",
+      "static/chunks/main-app-d4018903c40769e9.js",
+      "static/chunks/app/_not-found/page-a3b62b914f6e9f17.js"
+    ],
+    "/layout": [
+      "static/chunks/webpack-616e068a201ad621.js",
+      "static/chunks/fd9d1056-a3721692288cfd9a.js",
+      "static/chunks/117-c341fae7ea9c9c9c.js",
+      "static/chunks/main-app-d4018903c40769e9.js",
+      "static/css/8252e62c626d2277.css",
+      "static/chunks/972-5f6870bf62a24c63.js",
+      "static/chunks/app/layout-b8db7075360fcf0b.js"
+    ],
+    "/admin/page": [
+      "static/chunks/webpack-616e068a201ad621.js",
+      "static/chunks/fd9d1056-a3721692288cfd9a.js",
+      "static/chunks/117-c341fae7ea9c9c9c.js",
+      "static/chunks/main-app-d4018903c40769e9.js",
+      "static/chunks/710-a809a0ef68879d52.js",
+      "static/chunks/app/admin/page-0e6c90049fe692cd.js"
+    ],
+    "/checkout/turnos/page": [
+      "static/chunks/webpack-616e068a201ad621.js",
+      "static/chunks/fd9d1056-a3721692288cfd9a.js",
+      "static/chunks/117-c341fae7ea9c9c9c.js",
+      "static/chunks/main-app-d4018903c40769e9.js",
+      "static/chunks/app/checkout/turnos/page-98ba23c2f2c2ef82.js"
+    ],
+    "/failure/page": [
+      "static/chunks/webpack-616e068a201ad621.js",
+      "static/chunks/fd9d1056-a3721692288cfd9a.js",
+      "static/chunks/117-c341fae7ea9c9c9c.js",
+      "static/chunks/main-app-d4018903c40769e9.js",
+      "static/chunks/972-5f6870bf62a24c63.js",
+      "static/chunks/app/failure/page-510893e4035de467.js"
+    ],
+    "/reserva/confirmada/page": [
+      "static/chunks/webpack-616e068a201ad621.js",
+      "static/chunks/fd9d1056-a3721692288cfd9a.js",
+      "static/chunks/117-c341fae7ea9c9c9c.js",
+      "static/chunks/main-app-d4018903c40769e9.js",
+      "static/chunks/972-5f6870bf62a24c63.js",
+      "static/chunks/app/reserva/confirmada/page-16dd27eb760a5e02.js"
+    ],
+    "/reserva/fallida/page": [
+      "static/chunks/webpack-616e068a201ad621.js",
+      "static/chunks/fd9d1056-a3721692288cfd9a.js",
+      "static/chunks/117-c341fae7ea9c9c9c.js",
+      "static/chunks/main-app-d4018903c40769e9.js",
+      "static/chunks/972-5f6870bf62a24c63.js",
+      "static/chunks/app/reserva/fallida/page-882ce909b1013de6.js"
+    ],
+    "/reserva/pendiente/page": [
+      "static/chunks/webpack-616e068a201ad621.js",
+      "static/chunks/fd9d1056-a3721692288cfd9a.js",
+      "static/chunks/117-c341fae7ea9c9c9c.js",
+      "static/chunks/main-app-d4018903c40769e9.js",
+      "static/chunks/972-5f6870bf62a24c63.js",
+      "static/chunks/app/reserva/pendiente/page-35221a5e8dda972a.js"
+    ],
+    "/success/page": [
+      "static/chunks/webpack-616e068a201ad621.js",
+      "static/chunks/fd9d1056-a3721692288cfd9a.js",
+      "static/chunks/117-c341fae7ea9c9c9c.js",
+      "static/chunks/main-app-d4018903c40769e9.js",
+      "static/chunks/app/success/page-bfcae20bf82df473.js"
+    ],
+    "/reservar/page": [
+      "static/chunks/webpack-616e068a201ad621.js",
+      "static/chunks/fd9d1056-a3721692288cfd9a.js",
+      "static/chunks/117-c341fae7ea9c9c9c.js",
+      "static/chunks/main-app-d4018903c40769e9.js",
+      "static/chunks/972-5f6870bf62a24c63.js",
+      "static/chunks/app/reservar/page-3961c7bd174a0c8b.js"
+    ],
+    "/pending/page": [
+      "static/chunks/webpack-616e068a201ad621.js",
+      "static/chunks/fd9d1056-a3721692288cfd9a.js",
+      "static/chunks/117-c341fae7ea9c9c9c.js",
+      "static/chunks/main-app-d4018903c40769e9.js",
+      "static/chunks/972-5f6870bf62a24c63.js",
+      "static/chunks/app/pending/page-19cad1b318259fb3.js"
+    ],
+    "/page": [
+      "static/chunks/webpack-616e068a201ad621.js",
+      "static/chunks/fd9d1056-a3721692288cfd9a.js",
+      "static/chunks/117-c341fae7ea9c9c9c.js",
+      "static/chunks/main-app-d4018903c40769e9.js",
+      "static/chunks/972-5f6870bf62a24c63.js",
+      "static/chunks/app/page-cbfe7b1591915438.js"
+    ]
+  }
+}
