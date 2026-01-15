@@ -1,5 +1,5 @@
 import { FullConfig, defaultConfig, Reservation } from '@/data/config'
-import { createClient } from '@vercel/kv'
+import { getRedis } from './redis'
 
 const CONFIG_KEY = 'corpepilates:config'
 const RESERVATIONS_KEY = 'corpepilates:reservations'
@@ -32,39 +32,24 @@ export interface Order {
   createdAt: number
 }
 
-let kvClient: ReturnType<typeof createClient> | null = null
-
-function getKv() {
-  if (kvClient) return kvClient
-
-  const url = process.env.KV_REST_API_URL
-  const token = process.env.KV_REST_API_TOKEN
-
-  if (!url || !token) {
-    throw new Error('Missing KV_REST_API_URL / KV_REST_API_TOKEN')
-  }
-
-  kvClient = createClient({
-    url,
-    token,
-    cache: 'no-store',
-  })
-
-  return kvClient
-}
-
 export async function getStoredConfig(): Promise<FullConfig> {
   try {
-    const config = await getKv().get<FullConfig>(CONFIG_KEY)
-    return config || defaultConfig
+    const redis = getRedis()
+    const data = await redis.get(CONFIG_KEY)
+    if (data) {
+      return JSON.parse(data)
+    }
+    return defaultConfig
   } catch (error) {
+    console.error('Error getting config:', error)
     return defaultConfig
   }
 }
 
 export async function saveConfig(config: FullConfig): Promise<boolean> {
   try {
-    await getKv().set(CONFIG_KEY, config)
+    const redis = getRedis()
+    await redis.set(CONFIG_KEY, JSON.stringify(config))
     return true
   } catch (error) {
     console.error('Error saving config:', error)
@@ -74,8 +59,12 @@ export async function saveConfig(config: FullConfig): Promise<boolean> {
 
 export async function getReservations(): Promise<Reservation[]> {
   try {
-    const reservations = await getKv().get<Reservation[]>(RESERVATIONS_KEY)
-    return reservations || []
+    const redis = getRedis()
+    const data = await redis.get(RESERVATIONS_KEY)
+    if (data) {
+      return JSON.parse(data)
+    }
+    return []
   } catch {
     return []
   }
@@ -83,6 +72,7 @@ export async function getReservations(): Promise<Reservation[]> {
 
 export async function saveReservation(reservation: Reservation): Promise<boolean> {
   try {
+    const redis = getRedis()
     const reservations = await getReservations()
     const existingIndex = reservations.findIndex(r => r.id === reservation.id)
     if (existingIndex >= 0) {
@@ -90,7 +80,7 @@ export async function saveReservation(reservation: Reservation): Promise<boolean
     } else {
       reservations.push(reservation)
     }
-    await getKv().set(RESERVATIONS_KEY, reservations)
+    await redis.set(RESERVATIONS_KEY, JSON.stringify(reservations))
     return true
   } catch (error) {
     console.error('Error saving reservation:', error)
@@ -110,8 +100,12 @@ export async function getReservationById(id: string): Promise<Reservation | null
 
 export async function getOrders(): Promise<Order[]> {
   try {
-    const orders = await getKv().get<Order[]>(ORDERS_KEY)
-    return orders || []
+    const redis = getRedis()
+    const data = await redis.get(ORDERS_KEY)
+    if (data) {
+      return JSON.parse(data)
+    }
+    return []
   } catch {
     return []
   }
@@ -119,6 +113,7 @@ export async function getOrders(): Promise<Order[]> {
 
 export async function saveOrder(order: Order): Promise<boolean> {
   try {
+    const redis = getRedis()
     const orders = await getOrders()
     const existingIndex = orders.findIndex(o => o.id === order.id)
     if (existingIndex >= 0) {
@@ -126,7 +121,7 @@ export async function saveOrder(order: Order): Promise<boolean> {
     } else {
       orders.push(order)
     }
-    await getKv().set(ORDERS_KEY, orders)
+    await redis.set(ORDERS_KEY, JSON.stringify(orders))
     return true
   } catch (error) {
     console.error('Error saving order:', error)

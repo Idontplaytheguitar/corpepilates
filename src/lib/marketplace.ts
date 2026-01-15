@@ -1,4 +1,4 @@
-import { kv } from '@vercel/kv'
+import { getRedis } from './redis'
 
 export interface SellerCredentials {
   accessToken: string
@@ -15,7 +15,12 @@ const SELLER_KEY = 'corpepilates:seller'
 
 export async function getSellerCredentials(): Promise<SellerCredentials | null> {
   try {
-    return await kv.get<SellerCredentials>(SELLER_KEY)
+    const redis = getRedis()
+    const data = await redis.get(SELLER_KEY)
+    if (data) {
+      return JSON.parse(data)
+    }
+    return null
   } catch {
     return null
   }
@@ -23,7 +28,8 @@ export async function getSellerCredentials(): Promise<SellerCredentials | null> 
 
 export async function saveSellerCredentials(credentials: SellerCredentials): Promise<boolean> {
   try {
-    await kv.set(SELLER_KEY, credentials)
+    const redis = getRedis()
+    await redis.set(SELLER_KEY, JSON.stringify(credentials))
     return true
   } catch (error) {
     console.error('Error saving seller credentials:', error)
@@ -38,7 +44,8 @@ export async function updateSellerFee(feeEnabled: boolean, feePercentage: number
     
     seller.feeEnabled = feeEnabled
     seller.feePercentage = feePercentage
-    await kv.set(SELLER_KEY, seller)
+    const redis = getRedis()
+    await redis.set(SELLER_KEY, JSON.stringify(seller))
     return true
   } catch {
     return false
@@ -47,7 +54,8 @@ export async function updateSellerFee(feeEnabled: boolean, feePercentage: number
 
 export async function disconnectSeller(): Promise<boolean> {
   try {
-    await kv.del(SELLER_KEY)
+    const redis = getRedis()
+    await redis.del(SELLER_KEY)
     return true
   } catch {
     return false

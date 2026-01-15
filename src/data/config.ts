@@ -6,6 +6,7 @@ export interface SiteConfig {
   email: string
   location?: string
   deliveryMode?: 'pickup' | 'shipping' | 'both'
+  productsEnabled?: boolean
 }
 
 export interface ProductConfig {
@@ -103,6 +104,7 @@ export const defaultConfig: FullConfig = {
     email: 'corpepilates@gmail.com',
     location: 'Avenida Segurola 386, Floresta, CABA',
     deliveryMode: 'pickup',
+    productsEnabled: false,
   },
   booking: {
     enabled: true,

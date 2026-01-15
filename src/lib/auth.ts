@@ -1,24 +1,16 @@
-import { createClient } from '@vercel/kv'
 import nodemailer from 'nodemailer'
 import crypto from 'crypto'
+import { getRedis } from './redis'
 
 const ADMIN_PASSWORD_KEY = 'corpepilates:admin_password'
 const OTP_KEY = 'corpepilates:otp'
 const SESSION_PREFIX = 'corpepilates:session:'
 const SESSION_DURATION = 5 * 24 * 60 * 60
 
-function getKV() {
-  return createClient({
-    url: process.env.KV_REST_API_URL!,
-    token: process.env.KV_REST_API_TOKEN!,
-    cache: 'no-store',
-    automaticDeserialization: true,
-  })
-}
-
 export async function getAdminPassword(): Promise<string | null> {
   try {
-    return await getKV().get<string>(ADMIN_PASSWORD_KEY)
+    const redis = getRedis()
+    return await redis.get(ADMIN_PASSWORD_KEY)
   } catch {
     return null
   }
@@ -26,7 +18,8 @@ export async function getAdminPassword(): Promise<string | null> {
 
 export async function setAdminPassword(password: string): Promise<boolean> {
   try {
-    await getKV().set(ADMIN_PASSWORD_KEY, password)
+    const redis = getRedis()
+    await redis.set(ADMIN_PASSWORD_KEY, password)
     return true
   } catch {
     return false
@@ -44,20 +37,22 @@ export async function verifyPassword(password: string): Promise<boolean> {
 }
 
 export async function generateOTP(): Promise<string> {
+  const redis = getRedis()
   const otp = Math.random().toString().slice(2, 8)
-  await getKV().set(OTP_KEY, otp, { ex: 600 })
+  await redis.setex(OTP_KEY, 600, otp)
   return otp
 }
 
 export async function verifyOTP(otp: string, deleteAfter: boolean = false): Promise<boolean> {
   try {
-    const storedOTP = await getKV().get(OTP_KEY)
+    const redis = getRedis()
+    const storedOTP = await redis.get(OTP_KEY)
     const storedStr = String(storedOTP || '')
     const inputStr = String(otp || '').trim()
     
     if (storedStr && storedStr === inputStr) {
       if (deleteAfter) {
-        await getKV().del(OTP_KEY)
+        await redis.del(OTP_KEY)
       }
       return true
     }
@@ -70,20 +65,23 @@ export async function verifyOTP(otp: string, deleteAfter: boolean = false): Prom
 
 export async function deleteOTP(): Promise<void> {
   try {
-    await getKV().del(OTP_KEY)
+    const redis = getRedis()
+    await redis.del(OTP_KEY)
   } catch {}
 }
 
 export async function createSessionToken(): Promise<string> {
+  const redis = getRedis()
   const token = crypto.randomBytes(32).toString('hex')
-  await getKV().set(SESSION_PREFIX + token, { createdAt: Date.now() }, { ex: SESSION_DURATION })
+  await redis.setex(SESSION_PREFIX + token, SESSION_DURATION, JSON.stringify({ createdAt: Date.now() }))
   return token
 }
 
 export async function validateSessionToken(token: string): Promise<boolean> {
   if (!token) return false
   try {
-    const session = await getKV().get(SESSION_PREFIX + token)
+    const redis = getRedis()
+    const session = await redis.get(SESSION_PREFIX + token)
     return !!session
   } catch {
     return false
@@ -92,7 +90,8 @@ export async function validateSessionToken(token: string): Promise<boolean> {
 
 export async function deleteSessionToken(token: string): Promise<void> {
   try {
-    await getKV().del(SESSION_PREFIX + token)
+    const redis = getRedis()
+    await redis.del(SESSION_PREFIX + token)
   } catch {}
 }
 

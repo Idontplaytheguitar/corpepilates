@@ -9,9 +9,10 @@ import Cart from './Cart'
 interface HeaderProps {
   siteName?: string
   tagline?: string
+  productsEnabled?: boolean
 }
 
-export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates Reformer' }: HeaderProps) {
+export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates Reformer', productsEnabled = false }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
@@ -64,7 +65,7 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
 
             <nav className="hidden md:flex items-center gap-8">
               <NavLink href="/#servicios">Planes</NavLink>
-              <NavLink href="/#productos">Productos</NavLink>
+              {productsEnabled && <NavLink href="/#productos">Productos</NavLink>}
               <NavLink href="/#sobre-mi">Sobre Nosotros</NavLink>
               <NavLink href="/#contacto">Contacto</NavLink>
             </nav>
@@ -112,9 +113,11 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
               <MobileNavLink href="/#servicios" onClick={() => setMobileMenuOpen(false)}>
                 Planes
               </MobileNavLink>
-              <MobileNavLink href="/#productos" onClick={() => setMobileMenuOpen(false)}>
-                Productos
-              </MobileNavLink>
+              {productsEnabled && (
+                <MobileNavLink href="/#productos" onClick={() => setMobileMenuOpen(false)}>
+                  Productos
+                </MobileNavLink>
+              )}
               <MobileNavLink href="/#sobre-mi" onClick={() => setMobileMenuOpen(false)}>
                 Sobre Nosotros
               </MobileNavLink>
@@ -136,9 +139,21 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
 }
 
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (href.startsWith('/#') && typeof window !== 'undefined' && window.location.pathname === '/') {
+      e.preventDefault()
+      const hash = href.substring(1)
+      const element = document.querySelector(hash)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+  }
+
   return (
     <a
       href={href}
+      onClick={handleClick}
       className="text-rose-800 hover:text-rose-500 transition-colors font-medium relative group"
     >
       {children}
@@ -156,10 +171,22 @@ function MobileNavLink({
   onClick: () => void
   children: React.ReactNode
 }) {
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (href.startsWith('/#') && typeof window !== 'undefined' && window.location.pathname === '/') {
+      e.preventDefault()
+      const hash = href.substring(1)
+      const element = document.querySelector(hash)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' })
+      }
+    }
+    onClick()
+  }
+
   return (
     <a
       href={href}
-      onClick={onClick}
+      onClick={handleClick}
       className="text-rose-800 hover:text-rose-500 transition-colors font-medium py-2 px-4 rounded-lg hover:bg-rose-50"
     >
       {children}
