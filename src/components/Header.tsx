@@ -11,9 +11,10 @@ interface HeaderProps {
   siteName?: string
   tagline?: string
   productsEnabled?: boolean
+  packsEnabled?: boolean
 }
 
-export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates Reformer', productsEnabled = false }: HeaderProps) {
+export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates Reformer', productsEnabled = false, packsEnabled = true }: HeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
@@ -68,7 +69,7 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
 
             <nav className="hidden md:flex items-center gap-8">
               <NavLink href="/#servicios">Planes</NavLink>
-              <NavLink href="/#packs">Packs</NavLink>
+              {packsEnabled && <NavLink href="/#packs">Packs</NavLink>}
               {productsEnabled && <NavLink href="/#productos">Productos</NavLink>}
               <NavLink href="/#sobre-mi">Sobre Nosotros</NavLink>
               <NavLink href="/#contacto">Contacto</NavLink>
@@ -85,7 +86,7 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
                 </Link>
               )}
               
-              {!userLoading && (
+              {packsEnabled && !userLoading && (
                 user ? (
                   <div className="relative">
                     <button
@@ -136,7 +137,7 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
                             className="flex items-center gap-3 px-4 py-2 hover:bg-rose-50 text-rose-800 w-full"
                           >
                             <LogOut className="w-4 h-4" />
-                            Cerrar sesión
+                            Cerrar sesion
                           </button>
                         </div>
                       </>
@@ -185,9 +186,11 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
               <MobileNavLink href="/#servicios" onClick={() => setMobileMenuOpen(false)}>
                 Planes
               </MobileNavLink>
-              <MobileNavLink href="/#packs" onClick={() => setMobileMenuOpen(false)}>
-                📦 Packs de Clases
-              </MobileNavLink>
+              {packsEnabled && (
+                <MobileNavLink href="/#packs" onClick={() => setMobileMenuOpen(false)}>
+                  Packs de Clases
+                </MobileNavLink>
+              )}
               {productsEnabled && (
                 <MobileNavLink href="/#productos" onClick={() => setMobileMenuOpen(false)}>
                   Productos
@@ -199,22 +202,22 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
               <MobileNavLink href="/#contacto" onClick={() => setMobileMenuOpen(false)}>
                 Contacto
               </MobileNavLink>
-              {user && (
+              {packsEnabled && user && (
                 <MobileNavLink href="/mi-cuenta" onClick={() => setMobileMenuOpen(false)}>
-                  📅 Mis Clases
+                  Mis Clases
                 </MobileNavLink>
               )}
-              {!user && !userLoading && (
+              {packsEnabled && !user && !userLoading && (
                 <button
                   onClick={() => { login(); setMobileMenuOpen(false) }}
                   className="text-rose-800 hover:text-rose-500 transition-colors font-medium py-2 px-4 rounded-lg hover:bg-rose-50 text-left"
                 >
-                  🔑 Ingresar
+                  Ingresar
                 </button>
               )}
               {isAdmin && (
                 <MobileNavLink href="/admin" onClick={() => setMobileMenuOpen(false)}>
-                  ⚙️ Administración
+                  Administracion
                 </MobileNavLink>
               )}
             </nav>
@@ -226,14 +229,28 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
   )
 }
 
+function smoothScrollTo(targetId: string) {
+  const element = document.querySelector(targetId)
+  if (!element) return
+  
+  const headerOffset = 80
+  const elementPosition = element.getBoundingClientRect().top
+  const offsetPosition = elementPosition + window.pageYOffset - headerOffset
+  
+  window.scrollTo({
+    top: offsetPosition,
+    behavior: 'smooth'
+  })
+}
+
 function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (href.startsWith('/#') && typeof window !== 'undefined' && window.location.pathname === '/') {
-      e.preventDefault()
-      const hash = href.substring(1)
-      const element = document.querySelector(hash)
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' })
+    if (href.startsWith('/#') && typeof window !== 'undefined') {
+      if (window.location.pathname === '/') {
+        e.preventDefault()
+        const hash = href.substring(1)
+        smoothScrollTo(hash)
+        window.history.pushState(null, '', hash)
       }
     }
   }
@@ -245,7 +262,7 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
       className="text-rose-800 hover:text-rose-500 transition-colors font-medium relative group"
     >
       {children}
-      <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-rose-400 transition-all group-hover:w-full" />
+      <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-rose-400 transition-all duration-300 ease-out group-hover:w-full" />
     </a>
   )
 }
@@ -260,12 +277,12 @@ function MobileNavLink({
   children: React.ReactNode
 }) {
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (href.startsWith('/#') && typeof window !== 'undefined' && window.location.pathname === '/') {
-      e.preventDefault()
-      const hash = href.substring(1)
-      const element = document.querySelector(hash)
-      if (element) {
-        element.scrollIntoView({ behavior: 'smooth' })
+    if (href.startsWith('/#') && typeof window !== 'undefined') {
+      if (window.location.pathname === '/') {
+        e.preventDefault()
+        const hash = href.substring(1)
+        smoothScrollTo(hash)
+        window.history.pushState(null, '', hash)
       }
     }
     onClick()

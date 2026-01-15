@@ -29,7 +29,7 @@ export default async function RootLayout({
       <body className="antialiased">
         <UserProvider>
           <CartProvider>
-            <Header siteName={config.site.siteName} tagline={config.site.tagline} productsEnabled={config.site.productsEnabled} />
+            <Header siteName={config.site.siteName} tagline={config.site.tagline} productsEnabled={config.site.productsEnabled} packsEnabled={config.site.packsEnabled !== false} />
             <main className="min-h-screen">
               {children}
             </main>

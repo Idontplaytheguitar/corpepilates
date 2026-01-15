@@ -466,6 +466,27 @@ export default function AdminPage() {
 
                 <div className="border-t border-cream-200 pt-6 mt-6">
                   <h3 className="font-display text-lg font-semibold text-rose-800 mb-4">
+                    📦 Packs de Clases
+                  </h3>
+                  
+                  <div className="p-4 bg-cream-50 rounded-xl border border-cream-200">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={site.packsEnabled !== false}
+                        onChange={e => { setSite({ ...site, packsEnabled: e.target.checked }); markChanged() }}
+                        className="w-5 h-5 rounded border-cream-300 text-violet-500 focus:ring-violet-400"
+                      />
+                      <div>
+                        <span className="font-medium text-rose-800">Habilitar venta de packs</span>
+                        <p className="text-sm text-nude-500">Mostrá los packs de clases en la web y permite su compra</p>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+
+                <div className="border-t border-cream-200 pt-6 mt-6">
+                  <h3 className="font-display text-lg font-semibold text-rose-800 mb-4">
                     💳 Pagos y Reservas
                   </h3>
                   

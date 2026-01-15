@@ -7,6 +7,7 @@ export interface SiteConfig {
   location?: string
   deliveryMode?: 'pickup' | 'shipping' | 'both'
   productsEnabled?: boolean
+  packsEnabled?: boolean
   mercadopagoEnabled?: boolean
   singleClassEnabled?: boolean
 }
@@ -157,6 +158,7 @@ export const defaultConfig: FullConfig = {
     location: 'Avenida Segurola 386, Floresta, CABA',
     deliveryMode: 'pickup',
     productsEnabled: false,
+    packsEnabled: true,
     mercadopagoEnabled: true,
     singleClassEnabled: true,
   },
