@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
   const stateParam = request.nextUrl.searchParams.get('state')
   const error = request.nextUrl.searchParams.get('error')
   
-  const baseUrl = (process.env.NEXT_PUBLIC_URL || '').replace(/\/$/, '')
+  const baseUrl = process.env.NEXT_PUBLIC_URL || ''
   
   let returnTo = '/'
   if (stateParam) {
