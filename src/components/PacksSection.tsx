@@ -1,11 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, Clock, Calendar, MessageCircle, Loader2, User, AlertCircle } from 'lucide-react'
+import { Check, Clock, Calendar, MessageCircle, Loader2, AlertCircle } from 'lucide-react'
 import { formatPrice } from '@/data/config'
 import type { PackConfig } from '@/data/config'
 import { useUser } from '@/context/UserContext'
-import Link from 'next/link'
 
 interface PacksSectionProps {
   packs: PackConfig[]
@@ -15,7 +14,7 @@ interface PacksSectionProps {
 }
 
 export default function PacksSection({ packs, whatsapp, packsEnabled = true, mercadopagoEnabled = true }: PacksSectionProps) {
-  const { user, loading: userLoading, login } = useUser()
+  const { user, login } = useUser()
   const [purchasing, setPurchasing] = useState<string | null>(null)
   const [error, setError] = useState('')
 
@@ -80,45 +79,6 @@ export default function PacksSection({ packs, whatsapp, packsEnabled = true, mer
             <button onClick={() => setError('')} className="ml-auto text-red-500 hover:text-red-700">
               &times;
             </button>
-          </div>
-        )}
-
-        {!userLoading && !user && mercadopagoEnabled && (
-          <div className="max-w-3xl mx-auto mb-10 p-5 bg-gradient-to-r from-violet-50 to-blue-50 border border-violet-200 rounded-xl">
-            <div className="flex flex-col sm:flex-row items-start gap-4">
-              <div className="p-2 bg-violet-100 rounded-lg">
-                <User className="w-6 h-6 text-violet-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-semibold text-violet-800 mb-1">Compra online</h3>
-                <p className="text-violet-700 text-sm mb-3">
-                  Inicia sesion con Google para comprar packs online, agendar tus clases cuando quieras y ver tu historial.
-                </p>
-                <div className="flex flex-wrap gap-3">
-                  <button
-                    onClick={() => login('/#packs')}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white rounded-lg text-sm font-medium transition-colors"
-                  >
-                    <User className="w-4 h-4" />
-                    Iniciar sesion con Google
-                  </button>
-                  {whatsapp && (
-                    <a
-                      href={`https://wa.me/${whatsapp}?text=${encodeURIComponent('Hola! Me interesan los packs de clases. Podrian darme mas informacion?')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
-                    >
-                      <MessageCircle className="w-4 h-4" />
-                      Consultar por WhatsApp
-                    </a>
-                  )}
-                </div>
-                <p className="text-violet-600 text-xs mt-3">
-                  Tambien podes <Link href="/reservar" className="underline hover:text-violet-800">reservar clases individuales</Link> sin necesidad de cuenta.
-                </p>
-              </div>
-            </div>
           </div>
         )}
 
