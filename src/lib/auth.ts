@@ -142,3 +142,76 @@ export async function sendOTPEmail(email: string, otp: string): Promise<{ succes
     return { success: false, error: message }
   }
 }
+
+const RESET_TOKEN_PREFIX = 'corpepilates:admin_reset:'
+const RESET_TOKEN_TTL = 30 * 60 // 30 minutes
+
+export async function generateResetToken(): Promise<string> {
+  const redis = getRedis()
+  const token = crypto.randomBytes(32).toString('hex')
+  await redis.setex(RESET_TOKEN_PREFIX + token, RESET_TOKEN_TTL, JSON.stringify({ createdAt: Date.now() }))
+  return token
+}
+
+export async function validateResetToken(token: string): Promise<boolean> {
+  if (!token) return false
+  try {
+    const redis = getRedis()
+    const data = await redis.get(RESET_TOKEN_PREFIX + token)
+    return !!data
+  } catch {
+    return false
+  }
+}
+
+export async function deleteResetToken(token: string): Promise<void> {
+  try {
+    const redis = getRedis()
+    await redis.del(RESET_TOKEN_PREFIX + token)
+  } catch {}
+}
+
+export async function sendResetEmail(email: string, resetUrl: string): Promise<{ success: boolean; error?: string }> {
+  const smtpUser = process.env.SMTP_USER
+  const smtpPass = process.env.SMTP_PASS
+  const smtpHost = process.env.SMTP_HOST || 'smtp.gmail.com'
+  const smtpPort = parseInt(process.env.SMTP_PORT || '465')
+
+  if (!smtpUser || !smtpPass) {
+    return { success: false, error: 'Email no configurado en el servidor' }
+  }
+
+  try {
+    const transporter = nodemailer.createTransport({
+      host: smtpHost,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      auth: { user: smtpUser, pass: smtpPass },
+    })
+
+    await transporter.sendMail({
+      from: `Corpe Pilates <${smtpUser}>`,
+      to: email,
+      subject: 'Recuperar contraseña — Corpe Pilates Admin',
+      html: `
+        <div style="font-family: sans-serif; max-width: 400px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #e85d5d; text-align: center;">Corpe Pilates</h2>
+          <p style="text-align: center; color: #666;">Recibiste una solicitud para restablecer tu contraseña de administrador.</p>
+          <div style="text-align: center; margin: 20px 0;">
+            <a href="${resetUrl}" style="background: #e85d5d; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">
+              Restablecer contraseña
+            </a>
+          </div>
+          <p style="text-align: center; color: #999; font-size: 12px;">
+            Este link expira en 30 minutos.<br>
+            Si no solicitaste esto, ignorá este email.
+          </p>
+        </div>
+      `,
+    })
+    return { success: true }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Error desconocido'
+    return { success: false, error: message }
+  }
+}
