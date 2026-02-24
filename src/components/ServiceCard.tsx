@@ -131,7 +131,7 @@ export default function ServiceCard({ service, bookingEnabled, location, whatsap
 
   return (
     <>
-      <div className="group bg-white rounded-2xl overflow-hidden shadow-sm hover-lift border border-cream-100">
+      <div className="group bg-white rounded-2xl overflow-hidden shadow-sm hover-lift border border-cream-200 card-accent">
         <div className="relative h-48 overflow-hidden">
           {service.image ? (
             <img
@@ -166,7 +166,7 @@ export default function ServiceCard({ service, bookingEnabled, location, whatsap
             {service.description}
           </p>
           <div className="flex flex-col gap-3">
-            <span className="text-2xl font-semibold text-rose-600">
+            <span className="text-2xl font-display font-semibold text-rose-700">
               {formatPrice(service.price)}
             </span>
             <div className="flex items-center gap-2 flex-wrap">

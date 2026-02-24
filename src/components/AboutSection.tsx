@@ -46,9 +46,9 @@ export default function AboutSection() {
           </div>
 
           <div>
-            <span className="text-rose-500 text-sm font-medium tracking-widest uppercase">
+            <div className="section-eyebrow text-rose-500 mb-3">
               Sobre Nosotros
-            </span>
+            </div>
             <h2 className="font-display text-4xl sm:text-5xl font-semibold text-rose-800 mt-2 mb-6">
               Pilates Reformer
             </h2>
@@ -109,7 +109,7 @@ function FeatureCard({
   description: string
 }) {
   return (
-    <div className="p-4 bg-white rounded-xl border border-cream-100 hover-lift">
+    <div className="p-4 bg-white rounded-xl border border-cream-200 hover-lift card-accent">
       <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center text-rose-500 mb-3">
         {icon}
       </div>

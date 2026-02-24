@@ -13,19 +13,24 @@ interface ServicesSectionProps {
 }
 
 export default function ServicesSection({ services, bookingEnabled, mercadopagoEnabled = true, location, whatsapp, email }: ServicesSectionProps) {
-  const effectiveBookingEnabled = bookingEnabled && mercadopagoEnabled
+  const effectiveBookingEnabled = bookingEnabled
   const activeServices = services.filter(s => !s.paused)
 
   return (
     <section id="servicios" className="py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <span className="text-sage-500 text-sm font-medium tracking-widest uppercase">
+          <div className="section-eyebrow text-sage-500 justify-center mb-3">
             Pilates Reformer
-          </span>
+          </div>
           <h2 className="font-display text-4xl sm:text-5xl font-semibold text-rose-800 mt-2">
             Nuestros Planes
           </h2>
+          <div className="flex items-center justify-center gap-3 mt-4 mb-4">
+            <div className="h-px w-12 bg-nude-300" />
+            <div className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+            <div className="h-px w-12 bg-nude-300" />
+          </div>
           <p className="text-nude-500 mt-4 max-w-2xl mx-auto">
             {effectiveBookingEnabled
               ? 'Elegí el plan que mejor se adapte a tus objetivos y reservá tus clases online.'

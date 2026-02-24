@@ -17,6 +17,63 @@ interface MercadoPagoStatus {
   feePercentage?: number
 }
 
+function PaymentRow({ p, onVerified }: { p: any; onVerified: (id: string) => void }) {
+  const [verifying, setVerifying] = useState(false)
+  const [verifyError, setVerifyError] = useState('')
+  const [verified, setVerified] = useState(false)
+
+  const handleVerify = async () => {
+    setVerifying(true)
+    setVerifyError('')
+    try {
+      const res = await fetch('/api/admin/verify-payment', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: p.id, type: p.type }),
+      })
+      if (res.ok) {
+        setVerified(true)
+        setTimeout(() => onVerified(p.id), 800)
+      } else {
+        const data = await res.json().catch(() => ({}))
+        setVerifyError(data.error || `Error ${res.status}`)
+      }
+    } catch {
+      setVerifyError('Error de red')
+    } finally {
+      setVerifying(false)
+    }
+  }
+
+  return (
+    <div className="bg-white border border-cream-200 rounded-xl p-4 flex items-center justify-between gap-4">
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-rose-800">{p.name}</p>
+        <p className="text-sm text-nude-500 truncate">
+          {new Date(p.date + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })} · {p.time}hs · {p.service}
+        </p>
+        <p className="text-xs text-nude-400 mt-1">
+          {p.method === 'alias' ? '💳 Transferencia' : p.method === 'efectivo' ? '💵 Efectivo' : '—'}
+          {p.price > 0 && ` · $${p.price.toLocaleString('es-AR')}`}
+        </p>
+        {verifyError && <p className="text-xs text-red-500 mt-1">{verifyError}</p>}
+      </div>
+      <button
+        onClick={handleVerify}
+        disabled={verifying || verified}
+        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1 shrink-0 ${
+          verified
+            ? 'bg-green-100 text-green-700'
+            : 'bg-green-500 hover:bg-green-600 text-white disabled:opacity-60'
+        }`}
+      >
+        {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : verified ? '✓ Verificado' : '✓ Verificar'}
+      </button>
+    </div>
+  )
+}
+
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
@@ -1562,34 +1619,14 @@ export default function AdminPage() {
                 ) : (
                   <div className="space-y-3">
                     {pendingPayments.map((p: any) => (
-                      <div key={p.id} className="bg-white border border-cream-200 rounded-xl p-4 flex items-center justify-between gap-4">
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-rose-800">{p.name}</p>
-                          <p className="text-sm text-nude-500 truncate">
-                            {new Date(p.date + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })} · {p.time}hs · {p.service}
-                          </p>
-                          <p className="text-xs text-nude-400 mt-1">
-                            {p.method === 'alias' ? '💳 Transferencia' : p.method === 'efectivo' ? '💵 Efectivo' : '—'}
-                            {p.price > 0 && ` · $${p.price.toLocaleString('es-AR')}`}
-                          </p>
-                        </div>
-                        <button
-                          onClick={async () => {
-                            const res = await fetch('/api/admin/verify-payment', {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ id: p.id, type: p.type }),
-                            })
-                            if (res.ok) {
-                              setPendingPayments(prev => prev.filter((x: any) => x.id !== p.id))
-                              setPendingCount(c => c - 1)
-                            }
-                          }}
-                          className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1 shrink-0"
-                        >
-                          ✓ Verificar
-                        </button>
-                      </div>
+                      <PaymentRow
+                        key={p.id}
+                        p={p}
+                        onVerified={(id) => {
+                          setPendingPayments(prev => prev.filter((x: any) => x.id !== id))
+                          setPendingCount(c => c - 1)
+                        }}
+                      />
                     ))}
                   </div>
                 )}

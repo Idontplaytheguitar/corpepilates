@@ -61,12 +61,17 @@ export default function PacksSection({ packs, whatsapp, packsEnabled = true, mer
     <section id="packs" className="py-24 bg-gradient-to-b from-cream-50 to-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <span className="text-violet-500 text-sm font-medium tracking-widest uppercase">
+          <div className="section-eyebrow text-rose-500 justify-center mb-3">
             Flexibilidad Total
-          </span>
+          </div>
           <h2 className="font-display text-4xl sm:text-5xl font-semibold text-rose-800 mt-2">
             Packs de Clases
           </h2>
+          <div className="flex items-center justify-center gap-3 mt-4 mb-4">
+            <div className="h-px w-12 bg-nude-300" />
+            <div className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+            <div className="h-px w-12 bg-nude-300" />
+          </div>
           <p className="text-nude-500 mt-4 max-w-2xl mx-auto">
             Compra un pack y agenda tus clases cuando quieras. Sin compromisos mensuales, con total libertad.
           </p>

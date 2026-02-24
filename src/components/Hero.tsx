@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Activity, Heart, Zap } from 'lucide-react'
+import { Activity, Heart, Zap, ArrowRight } from 'lucide-react'
 
 interface HeroProps {
   siteName?: string
@@ -10,7 +10,7 @@ interface HeroProps {
 }
 
 export default function Hero({ siteName = 'Corpe Pilates', bookingEnabled = true, mercadopagoEnabled = true }: HeroProps) {
-  const showReservationButton = bookingEnabled && mercadopagoEnabled
+  const showReservationButton = bookingEnabled
 
   const [scrolled, setScrolled] = useState(false)
   useEffect(() => {
@@ -21,72 +21,101 @@ export default function Hero({ siteName = 'Corpe Pilates', bookingEnabled = true
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-      <div className="absolute inset-0 pattern-dots opacity-30" />
-      
-      <div className="absolute top-1/4 left-10 w-64 h-64 bg-rose-200 rounded-full blur-3xl opacity-40 animate-float" />
-      <div className="absolute bottom-1/4 right-10 w-80 h-80 bg-nude-200 rounded-full blur-3xl opacity-40 animate-float" style={{ animationDelay: '-3s' }} />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cream-200 rounded-full blur-3xl opacity-30" />
+      {/* Refined dot pattern */}
+      <div className="absolute inset-0 pattern-dots opacity-20" />
+
+      {/* Large decorative background text */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden">
+        <span
+          className="font-display font-bold text-rose-100 select-none"
+          style={{ fontSize: 'clamp(120px, 20vw, 280px)', lineHeight: 1, letterSpacing: '-0.02em', opacity: 0.35 }}
+          aria-hidden="true"
+        >
+          Pilates
+        </span>
+      </div>
+
+      {/* Subtle corner accents */}
+      <div className="absolute top-24 left-8 w-px h-24 bg-gradient-to-b from-rose-300 to-transparent" />
+      <div className="absolute top-24 left-8 w-24 h-px bg-gradient-to-r from-rose-300 to-transparent" />
+      <div className="absolute bottom-24 right-8 w-px h-24 bg-gradient-to-t from-nude-300 to-transparent" />
+      <div className="absolute bottom-24 right-8 w-24 h-px bg-gradient-to-l from-nude-300 to-transparent" />
 
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="animate-stagger">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 backdrop-blur-sm border border-rose-200 mb-8">
-            <Activity className="w-4 h-4 text-rose-500" />
-            <span className="text-sm text-rose-700 font-medium">Pilates Reformer para todos</span>
+          {/* Eyebrow badge - more minimal */}
+          <div className="inline-flex items-center gap-3 mb-8">
+            <div className="h-px w-8 bg-rose-400" />
+            <span className="text-xs text-rose-600 font-semibold tracking-[0.2em] uppercase">Pilates Reformer para todos</span>
+            <div className="h-px w-8 bg-rose-400" />
           </div>
 
-          <h1 className="font-display text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-semibold mb-6">
-            <span className="text-gradient">{siteName}</span>
+          {/* Main heading - two-line with weight contrast */}
+          <h1 className="font-display mb-6" style={{ lineHeight: 1.05 }}>
+            <span
+              className="block text-gradient"
+              style={{ fontSize: 'clamp(3rem, 10vw, 7rem)', fontWeight: 400, fontStyle: 'italic' }}
+            >
+              {siteName}
+            </span>
           </h1>
 
-          <p className="text-xl sm:text-2xl text-rose-700 max-w-2xl mx-auto mb-8 leading-relaxed">
-            Fortalecé tu core, cuidá tu columna y transformá tu cuerpo. 
-            <span className="text-nude-500"> Clases personalizadas </span> 
+          {/* Decorative divider */}
+          <div className="flex items-center justify-center gap-4 mb-8">
+            <div className="h-px w-16 bg-gradient-to-r from-transparent to-nude-300" />
+            <div className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+            <div className="h-px w-16 bg-gradient-to-l from-transparent to-nude-300" />
+          </div>
+
+          <p className="text-lg sm:text-xl text-nude-600 max-w-xl mx-auto mb-10 leading-relaxed font-light">
+            Fortalecé tu core, cuidá tu columna y transformá tu cuerpo.{' '}
+            <span className="text-rose-700 font-medium">Clases personalizadas</span>{' '}
             con equipos profesionales Reformer.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
             <a
               href="#servicios"
-              className="px-8 py-4 bg-gradient-to-r from-rose-500 to-rose-600 text-white rounded-full font-semibold hover:from-rose-600 hover:to-rose-700 transition-all hover:shadow-xl hover:shadow-rose-200 hover:-translate-y-1"
+              className="group inline-flex items-center gap-2 px-8 py-4 bg-rose-800 text-white rounded-xl font-semibold hover:bg-rose-700 transition-all hover:shadow-lg hover:shadow-rose-200 hover:-translate-y-0.5"
             >
               Ver Planes
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </a>
             {showReservationButton && (
               <a
                 href="/reservar"
-                className="px-8 py-4 bg-white/70 backdrop-blur-sm border-2 border-rose-300 text-rose-700 rounded-full font-semibold hover:bg-rose-50 hover:border-rose-400 transition-all hover:-translate-y-1"
+                className="inline-flex items-center gap-2 px-8 py-4 border border-rose-300 text-rose-700 rounded-xl font-semibold hover:bg-rose-50 hover:border-rose-400 transition-all hover:-translate-y-0.5"
               >
                 Reservar Clase
               </a>
             )}
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-8 text-sm text-rose-600">
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center">
-                <Heart className="w-5 h-5 text-rose-500" />
+          {/* Feature pills - more refined */}
+          <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
+            {[
+              { icon: <Heart className="w-3.5 h-3.5" />, label: 'Cuidá tu columna' },
+              { icon: <Activity className="w-3.5 h-3.5" />, label: 'Fortalecé tu core' },
+              { icon: <Zap className="w-3.5 h-3.5" />, label: 'Ganá fuerza y flexibilidad' },
+            ].map(({ icon, label }) => (
+              <div key={label} className="flex items-center gap-2 text-rose-600">
+                <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center text-rose-500">
+                  {icon}
+                </div>
+                <span className="text-nude-600 font-medium">{label}</span>
               </div>
-              <span>Cuidá tu columna</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-sage-100 flex items-center justify-center">
-                <Activity className="w-5 h-5 text-sage-500" />
-              </div>
-              <span>Fortalecé tu core</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-full bg-nude-100 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-nude-500" />
-              </div>
-              <span>Ganá fuerza y flexibilidad</span>
-            </div>
+            ))}
           </div>
         </div>
       </div>
 
-      <div className={`absolute bottom-12 left-1/2 -translate-x-1/2 animate-bounce transition-opacity duration-500 ${scrolled ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-        <div className="w-6 h-10 rounded-full border-2 border-rose-400 flex items-start justify-center p-2">
-          <div className="w-1.5 h-2.5 bg-rose-400 rounded-full animate-pulse" />
+      {/* Scroll indicator - refined */}
+      <div className={`absolute bottom-12 left-1/2 -translate-x-1/2 transition-opacity duration-500 ${scrolled ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-5 h-8 rounded-full border border-rose-300 flex items-start justify-center pt-1.5">
+            <div className="w-1 h-2 bg-rose-400 rounded-full animate-bounce" />
+          </div>
+          <span className="text-xs text-rose-400 tracking-widest uppercase font-medium" style={{ fontSize: '0.6rem' }}>scroll</span>
         </div>
       </div>
     </section>

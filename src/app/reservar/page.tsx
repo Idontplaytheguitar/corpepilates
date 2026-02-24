@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import {
   Calendar, Clock, ArrowLeft, ArrowRight, User, Mail, Phone,
-  Loader2, CreditCard, MapPin, AlertCircle, CheckCircle, Home, Heart
+  Loader2, CreditCard, MapPin, AlertCircle, CheckCircle, Home, Heart, ScrollText
 } from 'lucide-react'
 import { formatPrice } from '@/data/config'
 import type { ServiceConfig, SiteConfig, RecurringSchedule, DateException } from '@/data/config'
@@ -44,7 +44,7 @@ function ReservarContent() {
   const [recurring, setRecurring] = useState<RecurringSchedule[]>([])
   const [exceptions, setExceptions] = useState<DateException[]>([])
   const [bookingEnabled, setBookingEnabled] = useState(false)
-  const [mercadopagoEnabled, setMercadopagoEnabled] = useState(true)
+  const [mercadopagoEnabled, setMercadopagoEnabled] = useState(false)
   const [singleClassEnabled, setSingleClassEnabled] = useState(true)
   const [aliasConfig, setAliasConfig] = useState<AliasConfig | null>(null)
   const [reglamentoText, setReglamentoText] = useState('')
@@ -88,7 +88,12 @@ function ReservarContent() {
 
         if (preSelectedServiceId) {
           const pre = activeServices.find((s: ServiceConfig) => s.id === preSelectedServiceId)
-          if (pre) { setSelectedService(pre); setStep(2) }
+          if (pre) setSelectedService(pre)
+        }
+
+        // Auto-show reglamento on every page load (required before booking)
+        if (data.booking?.enabled !== false) {
+          setShowReglamento(true)
         }
       })
 
@@ -252,7 +257,7 @@ function ReservarContent() {
           onAccept={() => {
             setReglamentoAccepted(true)
             setShowReglamento(false)
-            setStep(2)
+            if (selectedService) setStep(2)
           }}
           onClose={() => setShowReglamento(false)}
         />
@@ -285,10 +290,49 @@ function ReservarContent() {
             {/* Step 1: Service selection */}
             {step === 1 && (
               <div className="p-6">
-                <h2 className="font-display text-xl font-semibold text-rose-800 mb-6 flex items-center gap-2">
+                <h2 className="font-display text-xl font-semibold text-rose-800 mb-4 flex items-center gap-2">
                   <span className="w-8 h-8 bg-rose-100 rounded-full flex items-center justify-center text-rose-600 text-sm font-bold">1</span>
                   Elegí un servicio
                 </h2>
+
+                {/* Reglamento status banner */}
+                <div className={`flex items-center justify-between p-4 rounded-xl border mb-6 ${
+                  reglamentoAccepted
+                    ? 'bg-green-50 border-green-200'
+                    : 'bg-rose-50 border-rose-200'
+                }`}>
+                  <div className="flex items-center gap-3">
+                    <ScrollText className={`w-5 h-5 shrink-0 ${reglamentoAccepted ? 'text-green-600' : 'text-rose-500'}`} />
+                    <div>
+                      <p className={`text-sm font-semibold ${reglamentoAccepted ? 'text-green-800' : 'text-rose-800'}`}>
+                        Reglamento del estudio
+                      </p>
+                      <p className={`text-xs ${reglamentoAccepted ? 'text-green-600' : 'text-rose-600'}`}>
+                        {reglamentoAccepted ? 'Ya aceptaste el reglamento' : 'Debés aceptar el reglamento antes de reservar'}
+                      </p>
+                    </div>
+                  </div>
+                  {reglamentoAccepted ? (
+                    <div className="flex items-center gap-2">
+                      <CheckCircle className="w-5 h-5 text-green-500" />
+                      <button
+                        onClick={() => setShowReglamento(true)}
+                        className="text-xs text-green-600 hover:text-green-700 underline underline-offset-2"
+                      >
+                        Ver
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => setShowReglamento(true)}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold rounded-lg transition-colors shrink-0"
+                    >
+                      <ScrollText className="w-4 h-4" />
+                      Leer y aceptar
+                    </button>
+                  )}
+                </div>
+
                 <div className="grid gap-4">
                   {services.map(service => (
                     <button key={service.id} onClick={() => handleServiceClick(service)}
@@ -316,12 +360,6 @@ function ReservarContent() {
                 {services.length === 0 && (
                   <div className="text-center py-12 text-nude-400">No hay servicios disponibles en este momento.</div>
                 )}
-                <div className="mt-6 pt-4 border-t border-cream-100">
-                  <button onClick={() => setShowReglamento(true)}
-                    className="text-sm text-nude-400 hover:text-rose-500 transition-colors flex items-center gap-1">
-                    📋 Ver reglamento del estudio
-                  </button>
-                </div>
               </div>
             )}
 
