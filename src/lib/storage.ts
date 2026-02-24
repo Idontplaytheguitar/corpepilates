@@ -1,4 +1,4 @@
-import { FullConfig, defaultConfig, Reservation, User, UserPack, ScheduledClass } from '@/data/config'
+import { FullConfig, defaultConfig, Reservation, User, UserPack, ScheduledClass, UserProfile } from '@/data/config'
 import { getRedis } from './redis'
 
 const CONFIG_KEY = 'corpepilates:config'
@@ -318,4 +318,42 @@ export async function deleteUserSession(token: string): Promise<void> {
     const redis = getRedis()
     await redis.del(USER_SESSIONS_PREFIX + token)
   } catch {}
+}
+
+// ── User Profile ─────────────────────────────────────────────────────────────
+const USER_PROFILE_PREFIX = 'corpepilates:user_profile:'
+
+export async function getUserProfile(userId: string): Promise<UserProfile | null> {
+  try {
+    const redis = getRedis()
+    const data = await redis.get(USER_PROFILE_PREFIX + userId)
+    return data ? JSON.parse(data) : null
+  } catch {
+    return null
+  }
+}
+
+export async function saveUserProfile(profile: UserProfile): Promise<boolean> {
+  try {
+    const redis = getRedis()
+    await redis.set(USER_PROFILE_PREFIX + profile.userId, JSON.stringify(profile))
+    return true
+  } catch {
+    return false
+  }
+}
+
+// ── Pending Payments ──────────────────────────────────────────────────────────
+export async function getPendingReservations(): Promise<Reservation[]> {
+  const reservations = await getReservations()
+  return reservations.filter(
+    r => r.status !== 'cancelled' && (!r.paymentStatus || r.paymentStatus === 'pending')
+  )
+}
+
+export async function getPendingScheduledClasses(): Promise<ScheduledClass[]> {
+  const classes = await getScheduledClasses()
+  return classes.filter(
+    c => c.status !== 'cancelled' && (!c.paymentStatus || c.paymentStatus === 'pending')
+  )
 }
