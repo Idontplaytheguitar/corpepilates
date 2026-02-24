@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import { Activity, Heart, Zap } from 'lucide-react'
 
 interface HeroProps {
@@ -10,6 +11,14 @@ interface HeroProps {
 
 export default function Hero({ siteName = 'Corpe Pilates', bookingEnabled = true, mercadopagoEnabled = true }: HeroProps) {
   const showReservationButton = bookingEnabled && mercadopagoEnabled
+
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 80)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       <div className="absolute inset-0 pattern-dots opacity-30" />
@@ -75,7 +84,7 @@ export default function Hero({ siteName = 'Corpe Pilates', bookingEnabled = true
         </div>
       </div>
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
+      <div className={`absolute bottom-12 left-1/2 -translate-x-1/2 animate-bounce transition-opacity duration-500 ${scrolled ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <div className="w-6 h-10 rounded-full border-2 border-rose-400 flex items-start justify-center p-2">
           <div className="w-1.5 h-2.5 bg-rose-400 rounded-full animate-pulse" />
         </div>

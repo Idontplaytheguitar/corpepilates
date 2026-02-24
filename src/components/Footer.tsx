@@ -1,11 +1,19 @@
+'use client'
+
+import { useState } from 'react'
 import { Heart, Instagram, MessageCircle, Mail } from 'lucide-react'
 import type { SiteConfig } from '@/data/config'
+import dynamic from 'next/dynamic'
+
+const ReglamentoModal = dynamic(() => import('./ReglamentoModal'), { ssr: false })
 
 interface FooterProps {
   config: SiteConfig
 }
 
 export default function Footer({ config }: FooterProps) {
+  const [showReglamento, setShowReglamento] = useState(false)
+
   const whatsappDisplay = config.whatsapp.replace(/(\d{2})(\d{2})(\d{4})(\d{4})/, '+$1 $2 $3-$4')
   const instagramHandle = config.instagram.split('/').pop() || 'corpepilates'
 
@@ -42,6 +50,14 @@ export default function Footer({ config }: FooterProps) {
                 <a href="/#sobre-mi" className="text-rose-200 hover:text-white transition-colors">
                   Sobre Nosotros
                 </a>
+              </li>
+              <li>
+                <button
+                  onClick={() => setShowReglamento(true)}
+                  className="text-rose-200 hover:text-white transition-colors"
+                >
+                  📋 Ver reglamento
+                </button>
               </li>
             </ul>
           </div>
@@ -101,6 +117,13 @@ export default function Footer({ config }: FooterProps) {
           </div>
         </div>
       </div>
+
+      {showReglamento && (
+        <ReglamentoModal
+          mode="readonly"
+          onClose={() => setShowReglamento(false)}
+        />
+      )}
     </footer>
   )
 }
