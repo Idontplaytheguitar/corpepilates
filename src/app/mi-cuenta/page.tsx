@@ -7,6 +7,7 @@ import { formatPrice } from '@/data/config'
 import type { UserPack, ScheduledClass, RecurringSchedule, DateException } from '@/data/config'
 import Link from 'next/link'
 import { useUser } from '@/context/UserContext'
+import WeeklyCalendar from '@/components/WeeklyCalendar'
 
 interface SlotInfo {
   time: string
@@ -28,6 +29,10 @@ function MiCuentaContent() {
   const [recurring, setRecurring] = useState<RecurringSchedule[]>([])
   const [exceptions, setExceptions] = useState<DateException[]>([])
   const [loading, setLoading] = useState(true)
+  const [bedsCapacity, setBedsCapacity] = useState(4)
+  const [profile, setProfile] = useState<{ direccion: string; obraSocial: string; telefono: string }>({ direccion: '', obraSocial: '', telefono: '' })
+  const [savingProfile, setSavingProfile] = useState(false)
+  const [profileMessage, setProfileMessage] = useState('')
   
   const [selectedPack, setSelectedPack] = useState<UserPack | null>(null)
   const [selectedDate, setSelectedDate] = useState<string>('')
@@ -38,7 +43,7 @@ function MiCuentaContent() {
   const [cancelling, setCancelling] = useState<string | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [activeTab, setActiveTab] = useState<'packs' | 'clases' | 'historial'>('packs')
+  const [activeTab, setActiveTab] = useState<'actividad' | 'agenda' | 'packs' | 'perfil'>('actividad')
 
   useEffect(() => {
     if (!user) return
@@ -54,6 +59,7 @@ function MiCuentaContent() {
       setHistoryClasses(classesData.history || [])
       setRecurring(configData.booking?.recurring || [])
       setExceptions(configData.booking?.exceptions || [])
+      setBedsCapacity(configData.booking?.bedsCapacity || 4)
       setLoading(false)
       
       if (packsData.active?.length > 0) {
@@ -62,6 +68,16 @@ function MiCuentaContent() {
     }).catch(() => {
       setLoading(false)
     })
+
+    fetch('/api/user/profile').then(r => r.json()).then(data => {
+      if (data.profile) {
+        setProfile({
+          direccion: data.profile.direccion || '',
+          obraSocial: data.profile.obraSocial || '',
+          telefono: data.profile.telefono || '',
+        })
+      }
+    }).catch(() => {})
   }, [user])
 
   useEffect(() => {
@@ -275,20 +291,23 @@ function MiCuentaContent() {
           </div>
         )}
 
-        <div className="flex gap-2 mb-6 overflow-x-auto">
-          {(['packs', 'clases', 'historial'] as const).map(tab => (
+        <div className="flex gap-1 border-b border-cream-200 mb-6 overflow-x-auto shrink-0">
+          {([
+            ['actividad', 'Mi actividad'],
+            ['agenda', 'Ver agenda'],
+            ['packs', 'Mis packs'],
+            ['perfil', 'Mi perfil'],
+          ] as const).map(([tab, label]) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 rounded-xl font-medium whitespace-nowrap transition-colors ${
+              className={`px-4 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 activeTab === tab
-                  ? 'bg-rose-500 text-white'
-                  : 'bg-white text-nude-600 hover:bg-rose-50'
+                  ? 'border-rose-500 text-rose-700'
+                  : 'border-transparent text-nude-500 hover:text-rose-600'
               }`}
             >
-              {tab === 'packs' && `Mis Packs (${activePacks.length})`}
-              {tab === 'clases' && `Próximas Clases (${upcomingClasses.length})`}
-              {tab === 'historial' && 'Historial'}
+              {label}
             </button>
           ))}
         </div>
@@ -299,6 +318,83 @@ function MiCuentaContent() {
           </div>
         ) : (
           <>
+            {activeTab === 'actividad' && (
+              <div className="space-y-4">
+                <h2 className="font-display text-xl font-semibold text-rose-800">Próximas Clases</h2>
+                
+                {upcomingClasses.length === 0 ? (
+                  <div className="bg-white rounded-xl p-8 text-center">
+                    <Calendar className="w-12 h-12 text-nude-300 mx-auto mb-4" />
+                    <p className="text-nude-500">No tenés clases agendadas</p>
+                  </div>
+                ) : (
+                  upcomingClasses.map(cls => (
+                    <div 
+                      key={cls.id}
+                      className="bg-white rounded-xl p-4 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 bg-sage-100 rounded-xl flex items-center justify-center">
+                          <Calendar className="w-6 h-6 text-sage-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-rose-800">
+                            {new Date(cls.date + 'T12:00:00').toLocaleDateString('es-AR', {
+                              weekday: 'long',
+                              day: 'numeric',
+                              month: 'long'
+                            })}
+                            {(cls as any).paymentStatus === 'pending' && (
+                              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium ml-2">
+                                Pago pendiente
+                              </span>
+                            )}
+                            {(cls as any).paymentStatus === 'verified' && (
+                              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium ml-2">
+                                ✓ Pagado
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-sm text-nude-500">
+                            {cls.time} - {cls.endTime}
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleCancel(cls.id)}
+                        disabled={cancelling === cls.id}
+                        className="px-4 py-2 text-rose-500 hover:bg-rose-50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                      >
+                        {cancelling === cls.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          'Cancelar'
+                        )}
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
+            {activeTab === 'agenda' && (
+              <div>
+                <p className="text-sm text-nude-500 mb-4">
+                  Turnos disponibles esta semana. Hacé click en un horario para reservar.
+                </p>
+                <WeeklyCalendar
+                  mode="user"
+                  recurring={recurring}
+                  exceptions={exceptions}
+                  capacity={bedsCapacity}
+                  userBookedSlots={upcomingClasses.map(c => ({ date: c.date, time: c.time }))}
+                  onSlotClick={(date, time) => {
+                    window.location.href = `/reservar?fecha=${date}&hora=${time}`
+                  }}
+                />
+              </div>
+            )}
+
             {activeTab === 'packs' && (
               <div className="grid lg:grid-cols-2 gap-6">
                 <div className="space-y-4">
@@ -481,115 +577,59 @@ function MiCuentaContent() {
               </div>
             )}
 
-            {activeTab === 'clases' && (
-              <div className="space-y-4">
-                <h2 className="font-display text-xl font-semibold text-rose-800">Próximas Clases</h2>
-                
-                {upcomingClasses.length === 0 ? (
-                  <div className="bg-white rounded-xl p-8 text-center">
-                    <Calendar className="w-12 h-12 text-nude-300 mx-auto mb-4" />
-                    <p className="text-nude-500">No tenés clases agendadas</p>
-                  </div>
-                ) : (
-                  upcomingClasses.map(cls => (
-                    <div 
-                      key={cls.id}
-                      className="bg-white rounded-xl p-4 flex items-center justify-between"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-sage-100 rounded-xl flex items-center justify-center">
-                          <Calendar className="w-6 h-6 text-sage-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-rose-800">
-                            {new Date(cls.date + 'T12:00:00').toLocaleDateString('es-AR', {
-                              weekday: 'long',
-                              day: 'numeric',
-                              month: 'long'
-                            })}
-                          </p>
-                          <p className="text-sm text-nude-500">
-                            {cls.time} - {cls.endTime}
-                          </p>
-                        </div>
-                      </div>
-                      <button
-                        onClick={() => handleCancel(cls.id)}
-                        disabled={cancelling === cls.id}
-                        className="px-4 py-2 text-rose-500 hover:bg-rose-50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-                      >
-                        {cancelling === cls.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          'Cancelar'
-                        )}
-                      </button>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-
-            {activeTab === 'historial' && (
-              <div className="space-y-6">
+            {activeTab === 'perfil' && (
+              <div className="max-w-md space-y-4">
+                <h3 className="font-display text-lg font-semibold text-rose-800 mb-4">Mis datos</h3>
                 <div>
-                  <h2 className="font-display text-xl font-semibold text-rose-800 mb-4">Packs Anteriores</h2>
-                  {historyPacks.length === 0 ? (
-                    <p className="text-nude-500">No hay packs anteriores</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {historyPacks.map(pack => (
-                        <div key={pack.id} className="bg-white rounded-xl p-4 opacity-75">
-                          <div className="flex justify-between">
-                            <div>
-                              <p className="font-medium text-nude-700">{pack.packName}</p>
-                              <p className="text-sm text-nude-500">
-                                {pack.status === 'expired' ? 'Expirado' : 'Clases agotadas'}
-                              </p>
-                            </div>
-                            <p className="text-nude-500">
-                              {pack.classesUsed} clases usadas
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <label className="block text-sm font-medium text-rose-700 mb-1">Nombre</label>
+                  <p className="px-4 py-3 bg-cream-50 rounded-xl text-rose-800">{user?.name}</p>
                 </div>
-
                 <div>
-                  <h2 className="font-display text-xl font-semibold text-rose-800 mb-4">Clases Anteriores</h2>
-                  {historyClasses.length === 0 ? (
-                    <p className="text-nude-500">No hay clases anteriores</p>
-                  ) : (
-                    <div className="space-y-2">
-                      {historyClasses.slice(0, 10).map(cls => (
-                        <div key={cls.id} className="bg-white rounded-xl p-4 opacity-75">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <p className="font-medium text-nude-700">
-                                {new Date(cls.date + 'T12:00:00').toLocaleDateString('es-AR', {
-                                  day: 'numeric',
-                                  month: 'short'
-                                })} - {cls.time}
-                              </p>
-                            </div>
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${
-                              cls.status === 'completed' ? 'bg-green-100 text-green-700' :
-                              cls.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                              cls.status === 'absent' ? 'bg-amber-100 text-amber-700' :
-                              'bg-nude-100 text-nude-700'
-                            }`}>
-                              {cls.status === 'completed' ? 'Completada' :
-                               cls.status === 'cancelled' ? 'Cancelada' :
-                               cls.status === 'absent' ? 'Ausente' : cls.status}
-                            </span>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                  <label className="block text-sm font-medium text-rose-700 mb-1">Email</label>
+                  <p className="px-4 py-3 bg-cream-50 rounded-xl text-nude-500">{user?.email}</p>
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-rose-700 mb-1">Teléfono</label>
+                  <input type="tel" value={profile.telefono}
+                    onChange={e => setProfile(p => ({ ...p, telefono: e.target.value }))}
+                    placeholder="11 1234 5678"
+                    className="w-full px-4 py-3 rounded-xl border border-cream-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-rose-700 mb-1">Dirección</label>
+                  <input type="text" value={profile.direccion}
+                    onChange={e => setProfile(p => ({ ...p, direccion: e.target.value }))}
+                    placeholder="Av. Corrientes 1234, CABA"
+                    className="w-full px-4 py-3 rounded-xl border border-cream-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-rose-700 mb-1">Obra social</label>
+                  <input type="text" value={profile.obraSocial}
+                    onChange={e => setProfile(p => ({ ...p, obraSocial: e.target.value }))}
+                    placeholder="OSDE / No tengo"
+                    className="w-full px-4 py-3 rounded-xl border border-cream-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none"
+                  />
+                </div>
+                {profileMessage && <p className="text-green-600 text-sm">{profileMessage}</p>}
+                <button
+                  onClick={async () => {
+                    setSavingProfile(true)
+                    await fetch('/api/user/profile', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(profile)
+                    })
+                    setSavingProfile(false)
+                    setProfileMessage('Datos guardados ✓')
+                    setTimeout(() => setProfileMessage(''), 3000)
+                  }}
+                  disabled={savingProfile}
+                  className="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-semibold transition-colors disabled:opacity-50"
+                >
+                  {savingProfile ? 'Guardando...' : 'Guardar cambios'}
+                </button>
               </div>
             )}
           </>
