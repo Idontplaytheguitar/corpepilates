@@ -62,6 +62,8 @@ export default function AdminPage() {
   const [pendingCount, setPendingCount] = useState(0)
   const [reglamentoText, setReglamentoText] = useState('')
   const [showReglamentoPreview, setShowReglamentoPreview] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
+  const [previewKey, setPreviewKey] = useState(0)
 
   useEffect(() => {
     fetch('/api/admin/auth', {
@@ -468,7 +470,19 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className="p-6">
+          {(activeTab === 'services' || activeTab === 'packs' || activeTab === 'site') && (
+            <button
+              onClick={() => { setShowPreview(!showPreview); setPreviewKey(k => k + 1) }}
+              className={`fixed bottom-6 right-6 z-40 px-5 py-3 rounded-full shadow-xl font-semibold transition-all text-sm ${
+                showPreview ? 'bg-rose-500 text-white shadow-rose-200' : 'bg-white border-2 border-rose-300 text-rose-700'
+              }`}
+            >
+              {showPreview ? '✕ Cerrar vista previa' : '👁 Vista previa'}
+            </button>
+          )}
+
+          <div className={showPreview ? 'flex gap-0 h-[calc(100vh-200px)] overflow-hidden' : ''}>
+            <div className={showPreview ? 'flex-1 overflow-y-auto p-6' : 'w-full p-6'}>
             {activeTab === 'site' && (
               <div className="space-y-6 max-w-2xl">
                 <h2 className="font-display text-xl font-semibold text-rose-800">Información de tu Negocio</h2>
@@ -1634,6 +1648,21 @@ export default function AdminPage() {
                     onClose={() => setShowReglamentoPreview(false)}
                   />
                 )}
+              </div>
+            )}
+            </div>
+            {showPreview && (
+              <div className="w-[420px] border-l border-cream-200 flex flex-col shrink-0">
+                <div className="h-10 bg-cream-100 flex items-center justify-between px-4 text-xs text-nude-500 font-medium shrink-0">
+                  <span>Vista previa del sitio</span>
+                  <button onClick={() => setPreviewKey(k => k + 1)} className="hover:text-rose-500 transition-colors">↺ Actualizar</button>
+                </div>
+                <iframe
+                  key={previewKey}
+                  src="/"
+                  className="flex-1 w-full border-0"
+                  title="Site preview"
+                />
               </div>
             )}
           </div>
