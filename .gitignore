@@ -49,3 +49,6 @@ Thumbs.db
 AGENT_CONTEXT.md
 AGENT_PROMPT.md
 NEW_INSTANCE_CHANGES.md
+
+# Git worktrees
+.worktrees/
