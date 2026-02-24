@@ -5,6 +5,9 @@ import { Save, Plus, Trash2, Eye, EyeOff, Lock, Check, AlertCircle, Loader2, Ima
 import type { FullConfig, ProductConfig, ServiceConfig, SiteConfig, BookingConfig, RecurringSchedule, DateException, Reservation, PackConfig } from '@/data/config'
 import { defaultConfig, formatPrice } from '@/data/config'
 import ScheduleEditor from '@/components/admin/ScheduleEditor'
+import WeeklyCalendar from '@/components/WeeklyCalendar'
+import dynamic from 'next/dynamic'
+const ReglamentoModal = dynamic(() => import('@/components/ReglamentoModal'), { ssr: false })
 
 interface MercadoPagoStatus {
   connected: boolean
@@ -41,7 +44,7 @@ export default function AdminPage() {
   const [booking, setBooking] = useState<BookingConfig>(defaultConfig.booking!)
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [orders, setOrders] = useState<{ id: string; items: { name: string; quantity: number; price: number }[]; serviceItems: { name: string; quantity: number; price: number }[]; selectedSlots: { serviceName?: string; date: string; time: string; status?: 'pending' | 'completed' | 'absent' }[]; customer: { name: string; email: string; phone: string }; total: number; status: string; deliveryStatus?: 'pending' | 'delivered'; createdAt: number }[]>([])
-  const [activeTab, setActiveTab] = useState<'site' | 'products' | 'services' | 'packs' | 'booking' | 'pedidos' | 'mercadopago'>('site')
+  const [activeTab, setActiveTab] = useState<'site' | 'products' | 'services' | 'packs' | 'booking' | 'pedidos' | 'mercadopago' | 'pagos' | 'calendario' | 'reglamento'>('site')
   const [selectedOrder, setSelectedOrder] = useState<typeof orders[0] | null>(null)
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const [configLoaded, setConfigLoaded] = useState(false)
@@ -54,6 +57,11 @@ export default function AdminPage() {
   const [mpLoading, setMpLoading] = useState(false)
   const [feeStatus, setFeeStatus] = useState<{ enabled: boolean; percentage: number; developmentPaid: boolean }>({ enabled: true, percentage: 5, developmentPaid: false })
   const [payingDev, setPayingDev] = useState(false)
+
+  const [pendingPayments, setPendingPayments] = useState<any[]>([])
+  const [pendingCount, setPendingCount] = useState(0)
+  const [reglamentoText, setReglamentoText] = useState('')
+  const [showReglamentoPreview, setShowReglamentoPreview] = useState(false)
 
   useEffect(() => {
     fetch('/api/admin/auth', {
@@ -104,6 +112,21 @@ export default function AdminPage() {
     fetch('/api/admin/orders')
       .then(res => res.json())
       .then(data => setOrders(data.orders || []))
+      .catch(() => {})
+
+    // Fetch pending payments
+    fetch('/api/admin/pending-payments', { credentials: 'include' })
+      .then(r => r.json())
+      .then(data => {
+        setPendingPayments(data.payments || [])
+        setPendingCount(data.count || 0)
+      })
+      .catch(() => {})
+
+    // Fetch reglamento
+    fetch('/api/admin/reglamento')
+      .then(r => r.json())
+      .then(data => setReglamentoText(data.reglamento || ''))
       .catch(() => {})
 
     const params = new URLSearchParams(window.location.search)
@@ -302,6 +325,21 @@ export default function AdminPage() {
                 </button>
               </div>
               
+              <div className="text-right -mt-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    const res = await fetch('/api/admin/auth/forgot-password', { method: 'POST' })
+                    const data = await res.json()
+                    if (data.success) alert(`Link enviado a ${data.email}`)
+                    else alert(data.error || 'Error al enviar')
+                  }}
+                  className="text-xs text-nude-500 hover:text-rose-500 transition-colors"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
+              </div>
+
               {authError && (
                 <p className="text-rose-500 text-sm text-center">{authError}</p>
               )}
@@ -392,6 +430,41 @@ export default function AdminPage() {
                   {tab === 'mercadopago' && '💳 MercadoPago'}
                 </button>
               ))}
+              <button
+                onClick={() => setActiveTab('pagos')}
+                className={`relative flex-1 py-4 px-4 font-medium transition-colors whitespace-nowrap ${
+                  activeTab === 'pagos'
+                    ? 'text-rose-600 border-b-2 border-rose-500 bg-rose-50'
+                    : 'text-nude-500 hover:text-rose-500'
+                }`}
+              >
+                💸 Pagos
+                {pendingCount > 0 && (
+                  <span className="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
+                    {pendingCount > 9 ? '9+' : pendingCount}
+                  </span>
+                )}
+              </button>
+              <button
+                onClick={() => setActiveTab('calendario')}
+                className={`flex-1 py-4 px-4 font-medium transition-colors whitespace-nowrap ${
+                  activeTab === 'calendario'
+                    ? 'text-rose-600 border-b-2 border-rose-500 bg-rose-50'
+                    : 'text-nude-500 hover:text-rose-500'
+                }`}
+              >
+                📆 Calendario
+              </button>
+              <button
+                onClick={() => setActiveTab('reglamento')}
+                className={`flex-1 py-4 px-4 font-medium transition-colors whitespace-nowrap ${
+                  activeTab === 'reglamento'
+                    ? 'text-rose-600 border-b-2 border-rose-500 bg-rose-50'
+                    : 'text-nude-500 hover:text-rose-500'
+                }`}
+              >
+                📋 Reglamento
+              </button>
             </div>
           </div>
 
@@ -1316,6 +1389,28 @@ export default function AdminPage() {
                   </label>
                 </div>
 
+                {!site.mercadopagoEnabled && (
+                  <div className="mt-4 p-4 bg-cream-50 rounded-xl border border-cream-200">
+                    <h4 className="font-medium text-rose-800 mb-3">Datos de transferencia (Alias/CVU)</h4>
+                    <div className="grid gap-3">
+                      {(['alias', 'cbu', 'banco', 'titular'] as const).map(field => (
+                        <div key={field}>
+                          <label className="block text-sm font-medium text-rose-700 mb-1 capitalize">{field === 'cbu' ? 'CBU/CVU' : field.charAt(0).toUpperCase() + field.slice(1)}</label>
+                          <input
+                            type="text"
+                            value={(site?.aliasConfig as any)?.[field] || ''}
+                            onChange={e => {
+                              setSite({ ...site, aliasConfig: { ...(site.aliasConfig as any || {}), [field]: e.target.value } })
+                              markChanged()
+                            }}
+                            className="w-full px-3 py-2 rounded-lg border border-cream-200 focus:border-rose-400 outline-none text-sm"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 {!feeStatus.developmentPaid && (
                   <div className="p-6 bg-amber-50 rounded-xl border border-amber-200">
                     <div className="flex items-start gap-4">
@@ -1437,6 +1532,108 @@ export default function AdminPage() {
                     {feeStatus.developmentPaid && <li>• ✅ Sin comisiones - desarrollo pagado</li>}
                   </ul>
                 </div>
+              </div>
+            )}
+
+            {activeTab === 'pagos' && (
+              <div>
+                <h2 className="font-display text-xl font-semibold text-rose-800 mb-6">
+                  Pagos pendientes ({pendingCount})
+                </h2>
+                {pendingPayments.length === 0 ? (
+                  <div className="text-center py-12 text-nude-400">
+                    <div className="text-4xl mb-3">✓</div>
+                    <p>No hay pagos pendientes</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {pendingPayments.map((p: any) => (
+                      <div key={p.id} className="bg-white border border-cream-200 rounded-xl p-4 flex items-center justify-between gap-4">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-rose-800">{p.name}</p>
+                          <p className="text-sm text-nude-500 truncate">
+                            {new Date(p.date + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })} · {p.time}hs · {p.service}
+                          </p>
+                          <p className="text-xs text-nude-400 mt-1">
+                            {p.method === 'alias' ? '💳 Transferencia' : p.method === 'efectivo' ? '💵 Efectivo' : '—'}
+                            {p.price > 0 && ` · $${p.price.toLocaleString('es-AR')}`}
+                          </p>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            const res = await fetch('/api/admin/verify-payment', {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ id: p.id, type: p.type }),
+                            })
+                            if (res.ok) {
+                              setPendingPayments(prev => prev.filter((x: any) => x.id !== p.id))
+                              setPendingCount(c => c - 1)
+                            }
+                          }}
+                          className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-semibold transition-colors flex items-center gap-1 shrink-0"
+                        >
+                          ✓ Verificar
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'calendario' && (
+              <div>
+                <h2 className="font-display text-xl font-semibold text-rose-800 mb-6">Agenda semanal</h2>
+                <WeeklyCalendar
+                  mode="admin"
+                  recurring={booking?.recurring || []}
+                  exceptions={booking?.exceptions || []}
+                  capacity={booking?.bedsCapacity || 4}
+                />
+              </div>
+            )}
+
+            {activeTab === 'reglamento' && (
+              <div>
+                <h2 className="font-display text-xl font-semibold text-rose-800 mb-2">Reglamento del estudio</h2>
+                <p className="text-nude-500 text-sm mb-6">
+                  Este texto se muestra a los usuarios antes de cada reserva. Usá *Título* para negritas y - para listas.
+                </p>
+                <textarea
+                  value={reglamentoText}
+                  onChange={e => setReglamentoText(e.target.value)}
+                  rows={16}
+                  className="w-full px-4 py-3 rounded-xl border border-cream-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none font-mono text-sm resize-y"
+                  placeholder="Ingresá el reglamento aquí..."
+                />
+                <div className="flex gap-3 mt-4">
+                  <button
+                    onClick={async () => {
+                      await fetch('/api/admin/reglamento', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reglamento: reglamentoText }),
+                      })
+                    }}
+                    className="px-6 py-2.5 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-semibold transition-colors"
+                  >
+                    Guardar reglamento
+                  </button>
+                  <button
+                    onClick={() => setShowReglamentoPreview(true)}
+                    className="px-6 py-2.5 border-2 border-rose-300 text-rose-700 rounded-xl font-medium hover:bg-rose-50 transition-colors"
+                  >
+                    Vista previa
+                  </button>
+                </div>
+                {showReglamentoPreview && (
+                  <ReglamentoModal
+                    mode="readonly"
+                    customText={reglamentoText}
+                    onClose={() => setShowReglamentoPreview(false)}
+                  />
+                )}
               </div>
             )}
           </div>
