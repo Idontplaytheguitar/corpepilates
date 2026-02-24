@@ -10,6 +10,13 @@ export interface SiteConfig {
   packsEnabled?: boolean
   mercadopagoEnabled?: boolean
   singleClassEnabled?: boolean
+  aliasConfig?: {
+    alias: string
+    cbu: string
+    banco: string
+    titular: string
+  }
+  reglamento?: string
 }
 
 export interface ProductConfig {
@@ -75,6 +82,10 @@ export interface Reservation {
   customerHealthConditions?: string
   paymentId?: string
   status: 'pending' | 'confirmed' | 'cancelled'
+  paymentStatus?: 'pending' | 'verified' | 'paid_online'
+  paymentMethod?: 'alias' | 'efectivo' | 'mercadopago'
+  customerDireccion?: string
+  customerObraSocial?: string
   createdAt: number
 }
 
@@ -96,6 +107,14 @@ export interface User {
   picture?: string
   googleId: string
   createdAt: number
+}
+
+export interface UserProfile {
+  userId: string
+  direccion: string
+  obraSocial: string
+  telefono?: string
+  updatedAt: number
 }
 
 export interface UserPack {
@@ -123,6 +142,10 @@ export interface ScheduledClass {
   customerEmail: string
   customerPhone: string
   status: 'scheduled' | 'completed' | 'cancelled' | 'absent'
+  paymentStatus?: 'pending' | 'verified' | 'paid_online'
+  paymentMethod?: 'alias' | 'efectivo' | 'mercadopago'
+  customerDireccion?: string
+  customerObraSocial?: string
   createdAt: number
 }
 
