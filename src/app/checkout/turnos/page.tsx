@@ -221,7 +221,9 @@ export default function CheckoutTurnosPage() {
   }
 
   const handleSubmit = async () => {
-    if (!checkoutData || selectedSlots.length < getTotalSlotsNeeded()) return
+    // DEMO: bypass slot requirement - REMOVE THIS
+    if (!checkoutData) return
+    // if (!checkoutData || selectedSlots.length < getTotalSlotsNeeded()) return
     
     setSubmitting(true)
     setError('')
@@ -286,7 +288,8 @@ export default function CheckoutTurnosPage() {
   }
 
   const totalSlotsNeeded = getTotalSlotsNeeded()
-  const allSlotsSelected = selectedSlots.length >= totalSlotsNeeded
+  // DEMO: bypass slot requirement - REMOVE THIS
+  const allSlotsSelected = true // selectedSlots.length >= totalSlotsNeeded
 
   const handleCancel = () => {
     if (confirm('¿Seguro que querés cancelar? Volverás al inicio.')) {
