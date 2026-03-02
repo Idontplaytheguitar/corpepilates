@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { Save, Plus, Trash2, Eye, EyeOff, Lock, Check, AlertCircle, Loader2, Image as ImageIcon, Key, Mail, Pause, Play, Calendar, Clock, X, LogOut } from 'lucide-react'
-import type { FullConfig, ProductConfig, ServiceConfig, SiteConfig, BookingConfig, RecurringSchedule, DateException, Reservation, PackConfig } from '@/data/config'
+import type { FullConfig, ProductConfig, ServiceConfig, SiteConfig, BookingConfig, RecurringSchedule, DateException, Reservation, PackConfig, ScheduledClass } from '@/data/config'
 import { defaultConfig, formatPrice } from '@/data/config'
 import { DEFAULT_REGLAMENTO } from '@/data/reglamento'
 import ScheduleEditor from '@/components/admin/ScheduleEditor'
@@ -166,6 +166,7 @@ export default function AdminPage() {
   const [packs, setPacks] = useState<PackConfig[]>(defaultConfig.packs || [])
   const [booking, setBooking] = useState<BookingConfig>(defaultConfig.booking!)
   const [reservations, setReservations] = useState<Reservation[]>([])
+  const [scheduledClasses, setScheduledClasses] = useState<ScheduledClass[]>([])
   const [orders, setOrders] = useState<{ id: string; items: { name: string; quantity: number; price: number }[]; serviceItems: { name: string; quantity: number; price: number }[]; selectedSlots: { serviceName?: string; date: string; time: string; status?: 'pending' | 'completed' | 'absent' }[]; customer: { name: string; email: string; phone: string }; total: number; status: string; deliveryStatus?: 'pending' | 'delivered'; createdAt: number }[]>([])
   const [activeTab, setActiveTab] = useState<'site' | 'services' | 'packs' | 'booking' | 'pedidos' | 'pagos' | 'calendario' | 'reglamento'>('site')
   const [selectedOrder, setSelectedOrder] = useState<typeof orders[0] | null>(null)
@@ -216,6 +217,11 @@ export default function AdminPage() {
     fetch('/api/admin/reservations')
       .then(res => res.json())
       .then(data => setReservations(data.reservations || []))
+      .catch(() => {})
+
+    fetch('/api/admin/classes', { credentials: 'include' })
+      .then(res => res.json())
+      .then(data => setScheduledClasses(data.classes || []))
       .catch(() => {})
     
     fetch('/api/admin/orders')
@@ -1392,6 +1398,23 @@ export default function AdminPage() {
                   recurring={booking?.recurring || []}
                   exceptions={booking?.exceptions || []}
                   capacity={booking?.bedsCapacity || 4}
+                  slotData={(() => {
+                    const data: Record<string, { time: string; count: number; entries: { id: string; name: string; paymentStatus?: string; type: 'class' | 'reservation' }[] }[]> = {}
+                    const add = (date: string, time: string, entry: { id: string; name: string; paymentStatus?: string; type: 'class' | 'reservation' }) => {
+                      if (!data[date]) data[date] = []
+                      let slot = data[date].find(s => s.time === time)
+                      if (!slot) { slot = { time, count: 0, entries: [] }; data[date].push(slot) }
+                      slot.count++
+                      slot.entries.push(entry)
+                    }
+                    reservations.filter(r => r.status !== 'cancelled').forEach(r =>
+                      add(r.date, r.time, { id: r.id, name: r.customerName, paymentStatus: r.paymentStatus || 'pending', type: 'reservation' })
+                    )
+                    scheduledClasses.filter(c => c.status !== 'cancelled').forEach(c =>
+                      add(c.date, c.time, { id: c.id, name: c.customerName, paymentStatus: c.paymentStatus || 'pending', type: 'class' })
+                    )
+                    return data
+                  })()}
                 />
               </div>
             )}

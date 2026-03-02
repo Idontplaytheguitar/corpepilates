@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
-import type { RecurringSchedule, DateException } from '@/data/config'
+import type { RecurringSchedule, DateException, TimeSlot } from '@/data/config'
+import { parseTime, formatTime } from '@/data/config'
 
 interface SlotEntry {
   name: string
@@ -56,16 +57,29 @@ export default function WeeklyCalendar({
   const [selectedSlot, setSelectedSlot] = useState<{ date: string; time: string } | null>(null)
   const days = getWeekDates(weekOffset)
 
+  const expandRanges = (ranges: TimeSlot[]): string[] => {
+    const result: string[] = []
+    for (const slot of ranges) {
+      let current = parseTime(slot.start)
+      const end = parseTime(slot.end)
+      while (current < end) {
+        result.push(formatTime(current))
+        current += 30
+      }
+    }
+    return result
+  }
+
   const getSlotsForDay = (date: Date): string[] => {
     const dateStr = date.toISOString().split('T')[0]
     const exception = exceptions.find(e => e.date === dateStr)
     if (exception) {
       if (exception.isBlocked) return []
-      return exception.slots.map(s => s.start)
+      return expandRanges(exception.slots)
     }
     const jsDay = date.getDay()
     const recurringDay = recurring.find(r => r.dayOfWeek === jsDay)
-    return recurringDay?.slots.map(s => s.start) || []
+    return expandRanges(recurringDay?.slots || [])
   }
 
   const isToday = (d: Date) => d.toDateString() === new Date().toDateString()

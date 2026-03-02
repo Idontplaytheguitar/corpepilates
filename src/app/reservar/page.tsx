@@ -627,7 +627,7 @@ function ReservarContent() {
                   )}
                   <button onClick={() => handleSubmit('efectivo')} disabled={submitting || !isFormValid()}
                     className="w-full py-3 border-2 border-rose-300 text-rose-700 rounded-xl font-medium hover:bg-rose-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    💵 Reservar y pagar en efectivo al llegar
+                    💵 Reservar y pagar al llegar (efectivo o transferencia)
                   </button>
                 </div>
               </div>
