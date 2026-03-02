@@ -8,6 +8,7 @@ import { parseTime, formatTime } from '@/data/config'
 interface SlotEntry {
   name: string
   paymentStatus?: string
+  status?: string
   id: string
   type: 'class' | 'reservation'
 }
@@ -18,12 +19,19 @@ interface SlotData {
   entries?: SlotEntry[]
 }
 
+interface UserBookedSlot {
+  date: string
+  time: string
+  status?: string
+  paymentStatus?: string
+}
+
 interface WeeklyCalendarProps {
   mode: 'user' | 'admin'
   recurring: RecurringSchedule[]
   exceptions: DateException[]
   capacity: number
-  userBookedSlots?: Array<{ date: string; time: string }>
+  userBookedSlots?: UserBookedSlot[]
   slotData?: Record<string, SlotData[]>
   onSlotClick?: (date: string, time: string) => void
   onEntryClick?: (id: string, type: 'class' | 'reservation') => void
@@ -42,6 +50,41 @@ function getWeekDates(offset: number): Date[] {
 }
 
 const DAY_NAMES = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom']
+
+type SlotState = 'available' | 'unconfirmed' | 'unpaid' | 'confirmed' | 'user_unconfirmed' | 'user_unpaid' | 'user_confirmed'
+
+function getSlotState(
+  entries: SlotEntry[],
+  count: number,
+  capacity: number,
+  userSlot: UserBookedSlot | null,
+  mode: 'user' | 'admin'
+): SlotState {
+  if (userSlot) {
+    const s = userSlot.status
+    const p = userSlot.paymentStatus
+    if (s === 'pending') return 'user_unconfirmed'
+    if (!p || p === 'pending') return 'user_unpaid'
+    return 'user_confirmed'
+  }
+  if (mode === 'admin') {
+    if (count === 0) return 'available'
+    if (entries.some(e => e.status === 'pending')) return 'unconfirmed'
+    if (entries.some(e => !e.paymentStatus || e.paymentStatus === 'pending')) return 'unpaid'
+    return 'confirmed'
+  }
+  return 'available'
+}
+
+const STATE_COLORS: Record<SlotState, string> = {
+  available:        'bg-green-100 text-green-700 hover:bg-green-200',
+  unconfirmed:      'bg-red-100 text-red-600 hover:bg-red-200',
+  unpaid:           'bg-orange-100 text-orange-600 hover:bg-orange-200',
+  confirmed:        'bg-blue-100 text-blue-700 hover:bg-blue-200',
+  user_unconfirmed: 'bg-red-400 text-white',
+  user_unpaid:      'bg-orange-400 text-white',
+  user_confirmed:   'bg-blue-500 text-white',
+}
 
 export default function WeeklyCalendar({
   mode,
@@ -126,17 +169,23 @@ export default function WeeklyCalendar({
               <div key={i} className="min-h-[80px] flex flex-col gap-1 p-1">
                 {slots.map(time => {
                   const data = slotData[dateStr]?.find(s => s.time === time)
-                  const isFull = data ? data.count >= capacity : false
-                  const userBooked = userBookedSlots.some(s => s.date === dateStr && s.time === time)
+                  const entries = data?.entries || []
+                  const count = data?.count || 0
+                  const isFull = count >= capacity
+                  const userSlot = userBookedSlots.find(s => s.date === dateStr && s.time === time) || null
                   const past = isPast(day)
+                  const state = past ? 'available' : getSlotState(entries, count, capacity, userSlot, mode)
+                  const colorClass = STATE_COLORS[state]
+                  const isUserSlot = !!userSlot
+                  const isDisabled = past || (isFull && !isUserSlot)
 
                   return (
                     <button
                       key={time}
-                      disabled={(isFull && !userBooked) || past}
+                      disabled={isDisabled}
                       onClick={() => {
                         if (past) return
-                        if (mode === 'user' && !isFull) onSlotClick?.(dateStr, time)
+                        if (mode === 'user' && !isFull && !isUserSlot) onSlotClick?.(dateStr, time)
                         if (mode === 'admin') {
                           setSelectedSlot(
                             selectedSlot?.date === dateStr && selectedSlot?.time === time
@@ -148,16 +197,14 @@ export default function WeeklyCalendar({
                       className={`w-full text-xs py-1.5 px-2 rounded-md font-medium transition-all flex items-center justify-between gap-1 ${
                         past
                           ? 'bg-cream-100 text-nude-300 cursor-default'
-                          : userBooked
-                          ? 'bg-blue-500 text-white'
-                          : isFull
-                          ? 'bg-red-100 text-red-500 cursor-not-allowed'
-                          : 'bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer'
+                          : isDisabled
+                          ? `${colorClass} cursor-not-allowed opacity-70`
+                          : colorClass
                       }`}
                     >
                       <span>{time}</span>
-                      {mode === 'admin' && data && data.count > 0 && (
-                        <span className="text-[10px] opacity-75 shrink-0">{data.count}/{capacity}</span>
+                      {mode === 'admin' && count > 0 && (
+                        <span className="text-[10px] opacity-75 shrink-0">{count}/{capacity}</span>
                       )}
                     </button>
                   )
@@ -175,8 +222,9 @@ export default function WeeklyCalendar({
 
       <div className="flex flex-wrap gap-4 mt-4 text-xs text-nude-500">
         <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-green-200 inline-block" /> Disponible</span>
-        {mode === 'user' && <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-blue-400 inline-block" /> Tu turno</span>}
-        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-200 inline-block" /> Lleno</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-300 inline-block" /> Sin confirmar</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-orange-300 inline-block" /> Pago pendiente</span>
+        <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-blue-400 inline-block" /> Confirmado</span>
       </div>
 
       {mode === 'admin' && selectedSlot && (
@@ -196,15 +244,24 @@ export default function WeeklyCalendar({
                 className="flex items-center justify-between p-3 bg-white rounded-lg mb-2 cursor-pointer hover:bg-rose-50 transition-colors"
               >
                 <span className="font-medium text-rose-800">{entry.name}</span>
-                <span className={`text-xs px-2 py-1 rounded-full font-medium ${
-                  entry.paymentStatus === 'verified' || entry.paymentStatus === 'paid_online'
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-amber-100 text-amber-700'
-                }`}>
-                  {entry.paymentStatus === 'verified' ? '✓ Verificado'
-                   : entry.paymentStatus === 'paid_online' ? '✓ Pagado online'
-                   : '⏳ Pendiente'}
-                </span>
+                <div className="flex items-center gap-2">
+                  {entry.type === 'reservation' && (
+                    <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                      entry.status === 'confirmed' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-600'
+                    }`}>
+                      {entry.status === 'confirmed' ? '✓ Confirmada' : '⏳ Sin confirmar'}
+                    </span>
+                  )}
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${
+                    entry.paymentStatus === 'verified' || entry.paymentStatus === 'paid_online'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-orange-100 text-orange-600'
+                  }`}>
+                    {entry.paymentStatus === 'verified' ? '✓ Pago verificado'
+                     : entry.paymentStatus === 'paid_online' ? '✓ Pagado online'
+                     : '💰 Pago pendiente'}
+                  </span>
+                </div>
               </div>
             ))
           })()}

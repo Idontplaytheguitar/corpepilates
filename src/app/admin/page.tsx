@@ -1403,8 +1403,8 @@ export default function AdminPage() {
                   capacity={booking?.bedsCapacity || 4}
                   onEntryClick={(id, type) => { setCalEntry({ id, type }); setCalEntryError('') }}
                   slotData={(() => {
-                    const data: Record<string, { time: string; count: number; entries: { id: string; name: string; paymentStatus?: string; type: 'class' | 'reservation' }[] }[]> = {}
-                    const add = (date: string, time: string, entry: { id: string; name: string; paymentStatus?: string; type: 'class' | 'reservation' }) => {
+                    const data: Record<string, { time: string; count: number; entries: { id: string; name: string; status?: string; paymentStatus?: string; type: 'class' | 'reservation' }[] }[]> = {}
+                    const add = (date: string, time: string, entry: { id: string; name: string; status?: string; paymentStatus?: string; type: 'class' | 'reservation' }) => {
                       if (!data[date]) data[date] = []
                       let slot = data[date].find(s => s.time === time)
                       if (!slot) { slot = { time, count: 0, entries: [] }; data[date].push(slot) }
@@ -1412,10 +1412,10 @@ export default function AdminPage() {
                       slot.entries.push(entry)
                     }
                     reservations.filter(r => r.status !== 'cancelled').forEach(r =>
-                      add(r.date, r.time, { id: r.id, name: r.customerName, paymentStatus: r.paymentStatus || 'pending', type: 'reservation' })
+                      add(r.date, r.time, { id: r.id, name: r.customerName, status: r.status, paymentStatus: r.paymentStatus || 'pending', type: 'reservation' })
                     )
                     scheduledClasses.filter(c => c.status !== 'cancelled').forEach(c =>
-                      add(c.date, c.time, { id: c.id, name: c.customerName, paymentStatus: c.paymentStatus || 'pending', type: 'class' })
+                      add(c.date, c.time, { id: c.id, name: c.customerName, status: c.status, paymentStatus: c.paymentStatus || 'pending', type: 'class' })
                     )
                     return data
                   })()}
@@ -1431,7 +1431,38 @@ export default function AdminPage() {
                     : null
                   const entity = r || c
                   if (!entity) return null
-                  const isVerified = (entity as any).paymentStatus === 'verified' || (entity as any).paymentStatus === 'paid_online'
+                  const isConfirmed = (entity as any).status === 'confirmed'
+                  const isPaid = (entity as any).paymentStatus === 'verified' || (entity as any).paymentStatus === 'paid_online'
+
+                  const doAction = async (action: 'confirm' | 'verify_payment') => {
+                    setCalEntryVerifying(true)
+                    setCalEntryError('')
+                    try {
+                      const res = await fetch('/api/admin/verify-payment', {
+                        method: 'POST', credentials: 'include',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: calEntry.id, type: calEntry.type, action }),
+                      })
+                      if (res.ok) {
+                        if (calEntry.type === 'reservation') {
+                          setReservations(prev => prev.map(x => x.id === calEntry.id
+                            ? { ...x, ...(action === 'confirm' ? { status: 'confirmed' } : { paymentStatus: 'verified' }) }
+                            : x
+                          ))
+                        } else {
+                          setScheduledClasses(prev => prev.map(x => x.id === calEntry.id
+                            ? { ...x, paymentStatus: 'verified' }
+                            : x
+                          ))
+                        }
+                      } else {
+                        const d = await res.json().catch(() => ({}))
+                        setCalEntryError(d.error || 'Error al actualizar')
+                      }
+                    } catch { setCalEntryError('Error de red') }
+                    finally { setCalEntryVerifying(false) }
+                  }
+
                   return (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setCalEntry(null)}>
                       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
@@ -1441,7 +1472,7 @@ export default function AdminPage() {
                             <X className="w-5 h-5" />
                           </button>
                         </div>
-                        <div className="space-y-2 text-sm mb-5">
+                        <div className="space-y-2 text-sm mb-4">
                           <p><span className="text-nude-400">Nombre:</span> <span className="font-medium text-rose-800">{(entity as any).customerName}</span></p>
                           <p><span className="text-nude-400">Email:</span> <span className="text-nude-600">{(entity as any).customerEmail}</span></p>
                           {(entity as any).customerPhone && <p><span className="text-nude-400">Teléfono:</span> <span className="text-nude-600">{(entity as any).customerPhone}</span></p>}
@@ -1449,48 +1480,54 @@ export default function AdminPage() {
                             {new Date((entity as any).date + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })} · {(entity as any).time}hs
                           </span></p>
                           {r && <p><span className="text-nude-400">Servicio:</span> <span className="text-nude-600">{r.serviceName}</span></p>}
-                          {r && <p><span className="text-nude-400">Método de pago:</span> <span className="text-nude-600">{r.paymentMethod === 'alias' ? '💳 Transferencia' : r.paymentMethod === 'efectivo' ? '💵 Efectivo' : '—'}</span></p>}
-                          <p><span className="text-nude-400">Estado:</span> {isVerified
-                            ? <span className="text-green-600 font-medium">✓ Verificado</span>
-                            : <span className="text-amber-600 font-medium">⏳ Pendiente</span>
-                          }</p>
+                          {r && <p><span className="text-nude-400">Método:</span> <span className="text-nude-600">{r.paymentMethod === 'alias' ? '💳 Transferencia' : r.paymentMethod === 'efectivo' ? '💵 Efectivo' : '—'}</span></p>}
                         </div>
-                        {calEntryError && <p className="text-red-500 text-sm mb-3">{calEntryError}</p>}
-                        {!isVerified && (
-                          <button
-                            disabled={calEntryVerifying}
-                            onClick={async () => {
-                              setCalEntryVerifying(true)
-                              setCalEntryError('')
-                              try {
-                                const res = await fetch('/api/admin/verify-payment', {
-                                  method: 'POST', credentials: 'include',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ id: calEntry.id, type: calEntry.type }),
-                                })
-                                if (res.ok) {
-                                  if (calEntry.type === 'reservation') {
-                                    setReservations(prev => prev.map(x => x.id === calEntry.id ? { ...x, paymentStatus: 'verified', status: 'confirmed' } : x))
-                                  } else {
-                                    setScheduledClasses(prev => prev.map(x => x.id === calEntry.id ? { ...x, paymentStatus: 'verified' } : x))
-                                  }
-                                  setCalEntry(null)
-                                } else {
-                                  const d = await res.json().catch(() => ({}))
-                                  setCalEntryError(d.error || 'Error al verificar')
+
+                        <div className="space-y-3 mb-4">
+                          {/* Reservation status — only for reservations */}
+                          {r && (
+                            <div className="flex items-center justify-between p-3 rounded-xl bg-cream-50 border border-cream-200">
+                              <div>
+                                <p className="text-xs text-nude-400 mb-0.5">Confirmación</p>
+                                {isConfirmed
+                                  ? <span className="text-sm font-medium text-blue-700">✓ Confirmada</span>
+                                  : <span className="text-sm font-medium text-red-600">⏳ Sin confirmar</span>
                                 }
-                              } catch { setCalEntryError('Error de red') }
-                              finally { setCalEntryVerifying(false) }
-                            }}
-                            className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
-                          >
-                            {calEntryVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
-                            Verificar reserva
-                          </button>
-                        )}
-                        {isVerified && (
-                          <p className="text-center text-green-600 font-medium text-sm py-2">✓ Esta reserva ya está verificada</p>
-                        )}
+                              </div>
+                              {!isConfirmed && (
+                                <button
+                                  disabled={calEntryVerifying}
+                                  onClick={() => doAction('confirm')}
+                                  className="px-3 py-1.5 bg-blue-500 hover:bg-blue-600 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-60"
+                                >
+                                  Confirmar
+                                </button>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Payment status */}
+                          <div className="flex items-center justify-between p-3 rounded-xl bg-cream-50 border border-cream-200">
+                            <div>
+                              <p className="text-xs text-nude-400 mb-0.5">Pago</p>
+                              {isPaid
+                                ? <span className="text-sm font-medium text-green-700">✓ Verificado</span>
+                                : <span className="text-sm font-medium text-amber-600">💰 Pendiente</span>
+                              }
+                            </div>
+                            {!isPaid && (
+                              <button
+                                disabled={calEntryVerifying}
+                                onClick={() => doAction('verify_payment')}
+                                className="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-lg transition-colors disabled:opacity-60"
+                              >
+                                {calEntryVerifying ? <Loader2 className="w-3 h-3 animate-spin inline" /> : 'Verificar'}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        {calEntryError && <p className="text-red-500 text-sm mb-3">{calEntryError}</p>}
                       </div>
                     </div>
                   )

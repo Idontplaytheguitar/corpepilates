@@ -9,23 +9,40 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
   }
 
-  const { id, type } = await req.json()
+  const { id, type, action } = await req.json()
 
   if (type === 'reservation') {
     const reservations = await getReservations()
     const idx = reservations.findIndex(r => r.id === id)
     if (idx === -1) return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
-    reservations[idx] = { ...reservations[idx], paymentStatus: 'verified', status: 'confirmed' }
+
+    if (action === 'confirm') {
+      reservations[idx] = { ...reservations[idx], status: 'confirmed' }
+    } else if (action === 'verify_payment') {
+      reservations[idx] = { ...reservations[idx], paymentStatus: 'verified' }
+      try {
+        await sendPaymentVerifiedEmail(
+          reservations[idx].customerEmail,
+          reservations[idx].customerName,
+          reservations[idx].date,
+          reservations[idx].time,
+          reservations[idx].serviceName
+        )
+      } catch {}
+    } else {
+      // Legacy: do both
+      reservations[idx] = { ...reservations[idx], paymentStatus: 'verified', status: 'confirmed' }
+      try {
+        await sendPaymentVerifiedEmail(
+          reservations[idx].customerEmail,
+          reservations[idx].customerName,
+          reservations[idx].date,
+          reservations[idx].time,
+          reservations[idx].serviceName
+        )
+      } catch {}
+    }
     await saveReservation(reservations[idx])
-    try {
-      await sendPaymentVerifiedEmail(
-        reservations[idx].customerEmail,
-        reservations[idx].customerName,
-        reservations[idx].date,
-        reservations[idx].time,
-        reservations[idx].serviceName
-      )
-    } catch {}
     return NextResponse.json({ success: true })
   }
 
@@ -33,17 +50,32 @@ export async function POST(req: NextRequest) {
     const classes = await getScheduledClasses()
     const idx = classes.findIndex(c => c.id === id)
     if (idx === -1) return NextResponse.json({ error: 'No encontrado' }, { status: 404 })
-    classes[idx] = { ...classes[idx], paymentStatus: 'verified' }
+
+    if (action === 'verify_payment') {
+      classes[idx] = { ...classes[idx], paymentStatus: 'verified' }
+      try {
+        await sendPaymentVerifiedEmail(
+          classes[idx].customerEmail,
+          classes[idx].customerName,
+          classes[idx].date,
+          classes[idx].time,
+          'Clase de Pilates Reformer'
+        )
+      } catch {}
+    } else {
+      // Legacy or default
+      classes[idx] = { ...classes[idx], paymentStatus: 'verified' }
+      try {
+        await sendPaymentVerifiedEmail(
+          classes[idx].customerEmail,
+          classes[idx].customerName,
+          classes[idx].date,
+          classes[idx].time,
+          'Clase de Pilates Reformer'
+        )
+      } catch {}
+    }
     await saveScheduledClass(classes[idx])
-    try {
-      await sendPaymentVerifiedEmail(
-        classes[idx].customerEmail,
-        classes[idx].customerName,
-        classes[idx].date,
-        classes[idx].time,
-        'Clase de Pilates Reformer'
-      )
-    } catch {}
     return NextResponse.json({ success: true })
   }
 

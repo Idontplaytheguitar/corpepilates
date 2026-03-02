@@ -72,6 +72,18 @@ function ReservarContent() {
   const [error, setError] = useState('')
   const [paymentMethod, setPaymentMethod] = useState<'mercadopago' | 'alias' | 'efectivo' | null>(null)
   const [bookingId, setBookingId] = useState('')
+  const [packClassesRemaining, setPackClassesRemaining] = useState(0)
+
+  useEffect(() => {
+    if (!user) return
+    fetch('/api/user/packs')
+      .then(r => r.json())
+      .then(data => {
+        const total = (data.active || []).reduce((sum: number, p: { classesRemaining: number }) => sum + p.classesRemaining, 0)
+        setPackClassesRemaining(total)
+      })
+      .catch(() => {})
+  }, [user])
 
   useEffect(() => {
     fetch('/api/admin/config')
@@ -320,6 +332,26 @@ function ReservarContent() {
               {[1, 2, 3].map(s => (
                 <div key={s} className={`flex-1 h-2 rounded-full transition-colors ${step >= s ? 'bg-rose-500' : 'bg-cream-200'}`} />
               ))}
+            </div>
+          )}
+
+          {packClassesRemaining > 0 && step < 4 && (
+            <div className="mb-4 p-4 rounded-2xl bg-violet-50 border border-violet-200 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">📦</span>
+                <div>
+                  <p className="font-semibold text-violet-800">
+                    Tenés {packClassesRemaining} {packClassesRemaining === 1 ? 'clase disponible' : 'clases disponibles'} en tu pack
+                  </p>
+                  <p className="text-sm text-violet-600">Podés agendar clases directamente desde Mi Cuenta</p>
+                </div>
+              </div>
+              <Link
+                href="/mi-cuenta"
+                className="shrink-0 px-4 py-2 bg-violet-500 hover:bg-violet-600 text-white text-sm font-semibold rounded-xl transition-colors"
+              >
+                Ir a Mi Cuenta
+              </Link>
             </div>
           )}
 

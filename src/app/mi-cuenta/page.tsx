@@ -399,7 +399,7 @@ function MiCuentaContent() {
                   recurring={recurring}
                   exceptions={exceptions}
                   capacity={bedsCapacity}
-                  userBookedSlots={upcomingClasses.map(c => ({ date: c.date, time: c.time }))}
+                  userBookedSlots={upcomingClasses.map(c => ({ date: c.date, time: c.time, status: 'confirmed', paymentStatus: 'verified' }))}
                   onSlotClick={(date, time) => {
                     const packWithClasses = activePacks.find(p => p.classesRemaining > 0)
                     if (packWithClasses) {
