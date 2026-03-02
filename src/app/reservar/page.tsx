@@ -640,12 +640,11 @@ function ReservarContent() {
                   <CheckCircle className="w-8 h-8 text-green-500" />
                 </div>
                 <h2 className="font-display text-2xl font-semibold text-rose-800 mb-2">
-                  {paymentMethod === 'efectivo' ? '¡Reserva creada!' : '¡Reserva creada! Enviá el comprobante'}
+                  ¡Reserva enviada!
                 </h2>
                 <p className="text-nude-500 mb-6">
-                  {paymentMethod === 'efectivo'
-                    ? 'Tu clase está agendada. El pago se abona en el estudio.'
-                    : 'Tu clase está agendada. Transferí y enviá el comprobante para confirmar.'}
+                  Tu solicitud fue recibida. El estudio confirmará tu reserva en breve.
+                  {paymentMethod === 'alias' && ' Una vez confirmada, te llegará la info de pago.'}
                 </p>
 
                 <div className="bg-cream-50 rounded-xl p-4 mb-6 text-left border border-cream-200">

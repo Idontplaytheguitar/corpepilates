@@ -42,6 +42,7 @@ function MiCuentaContent() {
   const [selectedTime, setSelectedTime] = useState<string>('')
   const [scheduling, setScheduling] = useState(false)
   const [cancelling, setCancelling] = useState<string | null>(null)
+  const [scheduleModal, setScheduleModal] = useState<{ date: string; time: string } | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [activeTab, setActiveTab] = useState<'actividad' | 'agenda' | 'packs' | 'perfil'>('actividad')
@@ -389,7 +390,9 @@ function MiCuentaContent() {
             {activeTab === 'agenda' && (
               <div>
                 <p className="text-sm text-nude-500 mb-4">
-                  Turnos disponibles esta semana. Hacé click en un horario para reservar.
+                  {activePacks.some(p => p.classesRemaining > 0)
+                    ? 'Hacé click en un horario para agendar usando tu pack.'
+                    : 'Turnos disponibles. Hacé click en un horario para reservar.'}
                 </p>
                 <WeeklyCalendar
                   mode="user"
@@ -398,9 +401,69 @@ function MiCuentaContent() {
                   capacity={bedsCapacity}
                   userBookedSlots={upcomingClasses.map(c => ({ date: c.date, time: c.time }))}
                   onSlotClick={(date, time) => {
-                    window.location.href = `/reservar?fecha=${date}&hora=${time}`
+                    const packWithClasses = activePacks.find(p => p.classesRemaining > 0)
+                    if (packWithClasses) {
+                      setScheduleModal({ date, time })
+                      setSelectedPack(packWithClasses)
+                    } else {
+                      window.location.href = `/reservar?fecha=${date}&hora=${time}`
+                    }
                   }}
                 />
+
+                {scheduleModal && selectedPack && (
+                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setScheduleModal(null)}>
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+                      <h3 className="font-display text-lg font-semibold text-rose-800 mb-2">Confirmar clase</h3>
+                      <p className="text-nude-500 text-sm mb-4">
+                        {new Date(scheduleModal.date + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })} · {scheduleModal.time}hs
+                      </p>
+                      <p className="text-sm text-violet-700 mb-5">
+                        Usando: <span className="font-medium">{selectedPack.packName}</span> ({selectedPack.classesRemaining} clase{selectedPack.classesRemaining !== 1 ? 's' : ''} restante{selectedPack.classesRemaining !== 1 ? 's' : ''})
+                      </p>
+                      {message?.type === 'error' && <p className="text-red-500 text-sm mb-3">{message.text}</p>}
+                      <div className="flex gap-3">
+                        <button onClick={() => setScheduleModal(null)} className="flex-1 py-2.5 border-2 border-cream-200 text-nude-600 rounded-xl font-medium hover:bg-cream-50 transition-colors">
+                          Cancelar
+                        </button>
+                        <button
+                          disabled={scheduling}
+                          onClick={async () => {
+                            setScheduling(true)
+                            setMessage(null)
+                            try {
+                              const res = await fetch('/api/user/classes/schedule', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ userPackId: selectedPack.id, date: scheduleModal.date, time: scheduleModal.time })
+                              })
+                              const data = await res.json()
+                              if (data.success) {
+                                setScheduleModal(null)
+                                setMessage({ type: 'success', text: '¡Clase agendada! Te esperamos.' })
+                                const [packsData, classesData] = await Promise.all([
+                                  fetch('/api/user/packs').then(r => r.json()),
+                                  fetch('/api/user/classes').then(r => r.json()),
+                                ])
+                                setActivePacks(packsData.active || [])
+                                setUpcomingClasses(classesData.upcoming || [])
+                              } else {
+                                setMessage({ type: 'error', text: data.error || 'Error al agendar' })
+                              }
+                            } catch {
+                              setMessage({ type: 'error', text: 'Error de conexión' })
+                            }
+                            setScheduling(false)
+                          }}
+                          className="flex-1 py-2.5 bg-violet-500 hover:bg-violet-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+                        >
+                          {scheduling ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                          Confirmar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

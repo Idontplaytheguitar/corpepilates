@@ -145,7 +145,7 @@ export default function WeeklyCalendar({
                           )
                         }
                       }}
-                      className={`w-full text-xs py-1.5 px-1 rounded-md font-medium transition-all ${
+                      className={`w-full text-xs py-1.5 px-2 rounded-md font-medium transition-all flex items-center justify-between gap-1 ${
                         past
                           ? 'bg-cream-100 text-nude-300 cursor-default'
                           : userBooked
@@ -155,9 +155,9 @@ export default function WeeklyCalendar({
                           : 'bg-green-100 text-green-700 hover:bg-green-200 cursor-pointer'
                       }`}
                     >
-                      <div>{time}</div>
-                      {mode === 'admin' && data && (
-                        <div className="text-[10px] opacity-75">{data.count}/{capacity}</div>
+                      <span>{time}</span>
+                      {mode === 'admin' && data && data.count > 0 && (
+                        <span className="text-[10px] opacity-75 shrink-0">{data.count}/{capacity}</span>
                       )}
                     </button>
                   )

@@ -179,6 +179,9 @@ export default function AdminPage() {
   
   const [pendingPayments, setPendingPayments] = useState<any[]>([])
   const [pendingCount, setPendingCount] = useState(0)
+  const [calEntry, setCalEntry] = useState<{ id: string; type: 'class' | 'reservation' } | null>(null)
+  const [calEntryVerifying, setCalEntryVerifying] = useState(false)
+  const [calEntryError, setCalEntryError] = useState('')
   const [reglamentoText, setReglamentoText] = useState('')
   const [showPreview, setShowPreview] = useState(false)
   const [previewKey, setPreviewKey] = useState(0)
@@ -1398,6 +1401,7 @@ export default function AdminPage() {
                   recurring={booking?.recurring || []}
                   exceptions={booking?.exceptions || []}
                   capacity={booking?.bedsCapacity || 4}
+                  onEntryClick={(id, type) => { setCalEntry({ id, type }); setCalEntryError('') }}
                   slotData={(() => {
                     const data: Record<string, { time: string; count: number; entries: { id: string; name: string; paymentStatus?: string; type: 'class' | 'reservation' }[] }[]> = {}
                     const add = (date: string, time: string, entry: { id: string; name: string; paymentStatus?: string; type: 'class' | 'reservation' }) => {
@@ -1416,6 +1420,81 @@ export default function AdminPage() {
                     return data
                   })()}
                 />
+
+                {/* Entry detail / verify modal */}
+                {calEntry && (() => {
+                  const r = calEntry.type === 'reservation'
+                    ? reservations.find(x => x.id === calEntry.id)
+                    : null
+                  const c = calEntry.type === 'class'
+                    ? scheduledClasses.find(x => x.id === calEntry.id)
+                    : null
+                  const entity = r || c
+                  if (!entity) return null
+                  const isVerified = (entity as any).paymentStatus === 'verified' || (entity as any).paymentStatus === 'paid_online'
+                  return (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setCalEntry(null)}>
+                      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
+                        <div className="flex items-start justify-between mb-4">
+                          <h3 className="font-display text-lg font-semibold text-rose-800">Detalle de reserva</h3>
+                          <button onClick={() => setCalEntry(null)} className="p-1 rounded-lg hover:bg-cream-100 text-nude-400">
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+                        <div className="space-y-2 text-sm mb-5">
+                          <p><span className="text-nude-400">Nombre:</span> <span className="font-medium text-rose-800">{(entity as any).customerName}</span></p>
+                          <p><span className="text-nude-400">Email:</span> <span className="text-nude-600">{(entity as any).customerEmail}</span></p>
+                          {(entity as any).customerPhone && <p><span className="text-nude-400">Teléfono:</span> <span className="text-nude-600">{(entity as any).customerPhone}</span></p>}
+                          <p><span className="text-nude-400">Fecha:</span> <span className="font-medium text-rose-800">
+                            {new Date((entity as any).date + 'T12:00:00').toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })} · {(entity as any).time}hs
+                          </span></p>
+                          {r && <p><span className="text-nude-400">Servicio:</span> <span className="text-nude-600">{r.serviceName}</span></p>}
+                          {r && <p><span className="text-nude-400">Método de pago:</span> <span className="text-nude-600">{r.paymentMethod === 'alias' ? '💳 Transferencia' : r.paymentMethod === 'efectivo' ? '💵 Efectivo' : '—'}</span></p>}
+                          <p><span className="text-nude-400">Estado:</span> {isVerified
+                            ? <span className="text-green-600 font-medium">✓ Verificado</span>
+                            : <span className="text-amber-600 font-medium">⏳ Pendiente</span>
+                          }</p>
+                        </div>
+                        {calEntryError && <p className="text-red-500 text-sm mb-3">{calEntryError}</p>}
+                        {!isVerified && (
+                          <button
+                            disabled={calEntryVerifying}
+                            onClick={async () => {
+                              setCalEntryVerifying(true)
+                              setCalEntryError('')
+                              try {
+                                const res = await fetch('/api/admin/verify-payment', {
+                                  method: 'POST', credentials: 'include',
+                                  headers: { 'Content-Type': 'application/json' },
+                                  body: JSON.stringify({ id: calEntry.id, type: calEntry.type }),
+                                })
+                                if (res.ok) {
+                                  if (calEntry.type === 'reservation') {
+                                    setReservations(prev => prev.map(x => x.id === calEntry.id ? { ...x, paymentStatus: 'verified', status: 'confirmed' } : x))
+                                  } else {
+                                    setScheduledClasses(prev => prev.map(x => x.id === calEntry.id ? { ...x, paymentStatus: 'verified' } : x))
+                                  }
+                                  setCalEntry(null)
+                                } else {
+                                  const d = await res.json().catch(() => ({}))
+                                  setCalEntryError(d.error || 'Error al verificar')
+                                }
+                              } catch { setCalEntryError('Error de red') }
+                              finally { setCalEntryVerifying(false) }
+                            }}
+                            className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-60"
+                          >
+                            {calEntryVerifying ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                            Verificar reserva
+                          </button>
+                        )}
+                        {isVerified && (
+                          <p className="text-center text-green-600 font-medium text-sm py-2">✓ Esta reserva ya está verificada</p>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })()}
               </div>
             )}
 
