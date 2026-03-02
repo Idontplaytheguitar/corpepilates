@@ -182,9 +182,29 @@ export default function AdminPage() {
   const [calEntry, setCalEntry] = useState<{ id: string; type: 'class' | 'reservation' } | null>(null)
   const [calEntryVerifying, setCalEntryVerifying] = useState(false)
   const [calEntryError, setCalEntryError] = useState('')
+  const [calAction, setCalAction] = useState<'cancel' | 'reschedule' | null>(null)
+  const [rescheduleDate, setRescheduleDate] = useState('')
+  const [rescheduleTime, setRescheduleTime] = useState('')
+  const [rescheduleSlots, setRescheduleSlots] = useState<string[]>([])
+  const [rescheduleLoading, setRescheduleLoading] = useState(false)
   const [reglamentoText, setReglamentoText] = useState('')
   const [showPreview, setShowPreview] = useState(false)
   const [previewKey, setPreviewKey] = useState(0)
+
+  const closeCalModal = () => {
+    setCalEntry(null)
+    setCalAction(null)
+    setRescheduleDate('')
+    setRescheduleTime('')
+    setRescheduleSlots([])
+  }
+
+  useEffect(() => {
+    setCalAction(null)
+    setRescheduleDate('')
+    setRescheduleTime('')
+    setRescheduleSlots([])
+  }, [calEntry])
 
   useEffect(() => {
     fetch('/api/admin/auth', {
@@ -1464,11 +1484,11 @@ export default function AdminPage() {
                   }
 
                   return (
-                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={() => setCalEntry(null)}>
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm" onClick={closeCalModal}>
                       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
                         <div className="flex items-start justify-between mb-4">
                           <h3 className="font-display text-lg font-semibold text-rose-800">Detalle de reserva</h3>
-                          <button onClick={() => setCalEntry(null)} className="p-1 rounded-lg hover:bg-cream-100 text-nude-400">
+                          <button onClick={closeCalModal} className="p-1 rounded-lg hover:bg-cream-100 text-nude-400">
                             <X className="w-5 h-5" />
                           </button>
                         </div>
@@ -1528,6 +1548,151 @@ export default function AdminPage() {
                         </div>
 
                         {calEntryError && <p className="text-red-500 text-sm mb-3">{calEntryError}</p>}
+
+                        {/* Action buttons — only when not cancelled */}
+                        {(entity as any).status !== 'cancelled' && !calAction && (
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => setCalAction('reschedule')}
+                              className="flex-1 px-3 py-2 border border-indigo-300 text-indigo-700 text-xs font-semibold rounded-xl hover:bg-indigo-50 transition-colors"
+                            >
+                              🗓 Reprogramar
+                            </button>
+                            <button
+                              onClick={() => setCalAction('cancel')}
+                              className="flex-1 px-3 py-2 border border-red-300 text-red-600 text-xs font-semibold rounded-xl hover:bg-red-50 transition-colors"
+                            >
+                              ✕ Cancelar reserva
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Reschedule panel */}
+                        {calAction === 'reschedule' && (
+                          <div className="mt-3 space-y-3">
+                            <p className="text-xs font-semibold text-nude-600 uppercase tracking-wide">Nueva fecha y hora</p>
+                            <input
+                              type="date"
+                              min={new Date().toISOString().slice(0, 10)}
+                              value={rescheduleDate}
+                              onChange={async (e) => {
+                                const d = e.target.value
+                                setRescheduleDate(d)
+                                setRescheduleTime('')
+                                setRescheduleSlots([])
+                                if (d) {
+                                  setRescheduleLoading(true)
+                                  try {
+                                    const res = await fetch(`/api/booking/slots?date=${d}`, { credentials: 'include' })
+                                    const data = await res.json()
+                                    setRescheduleSlots(data.slots || [])
+                                  } catch {}
+                                  finally { setRescheduleLoading(false) }
+                                }
+                              }}
+                              className="w-full border border-cream-300 rounded-xl px-3 py-2 text-sm text-nude-700 focus:outline-none focus:ring-2 focus:ring-rose-300"
+                            />
+                            {rescheduleLoading && <p className="text-xs text-nude-400">Cargando horarios...</p>}
+                            {rescheduleSlots.length > 0 && (
+                              <div className="grid grid-cols-3 gap-1.5">
+                                {rescheduleSlots.map(slot => (
+                                  <button
+                                    key={slot}
+                                    onClick={() => setRescheduleTime(slot)}
+                                    className={`py-1.5 text-xs font-medium rounded-lg border transition-colors ${rescheduleTime === slot ? 'bg-rose-500 text-white border-rose-500' : 'border-cream-300 text-nude-600 hover:bg-cream-50'}`}
+                                  >
+                                    {slot}hs
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                            <div className="flex gap-2">
+                              <button
+                                disabled={!rescheduleDate || !rescheduleTime || rescheduleLoading}
+                                onClick={async () => {
+                                  setRescheduleLoading(true)
+                                  try {
+                                    const res = await fetch('/api/admin/manage-booking', {
+                                      method: 'POST', credentials: 'include',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ id: calEntry!.id, type: calEntry!.type === 'class' ? 'scheduled_class' : 'reservation', action: 'reschedule', newDate: rescheduleDate, newTime: rescheduleTime }),
+                                    })
+                                    if (res.ok) {
+                                      if (calEntry!.type === 'reservation') {
+                                        setReservations(prev => prev.map(x => x.id === calEntry!.id ? { ...x, date: rescheduleDate, time: rescheduleTime } : x))
+                                      } else {
+                                        setScheduledClasses(prev => prev.map(x => x.id === calEntry!.id ? { ...x, date: rescheduleDate, time: rescheduleTime } : x))
+                                      }
+                                      closeCalModal()
+                                    } else {
+                                      const d = await res.json().catch(() => ({}))
+                                      setCalEntryError(d.error || 'Error al reprogramar')
+                                    }
+                                  } catch { setCalEntryError('Error de red') }
+                                  finally { setRescheduleLoading(false) }
+                                }}
+                                className="flex-1 px-3 py-2 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-semibold rounded-xl transition-colors disabled:opacity-50"
+                              >
+                                {rescheduleLoading ? <Loader2 className="w-3 h-3 animate-spin inline" /> : 'Confirmar reprogramación'}
+                              </button>
+                              <button
+                                onClick={() => setCalAction(null)}
+                                className="px-3 py-2 border border-cream-300 text-nude-500 text-xs font-semibold rounded-xl hover:bg-cream-50 transition-colors"
+                              >
+                                Volver
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Cancel panel */}
+                        {calAction === 'cancel' && (
+                          <div className="mt-3 space-y-3">
+                            <div className="bg-red-50 border border-red-200 rounded-xl p-3">
+                              <p className="text-sm text-red-700">¿Confirmar la cancelación? Se notificará al cliente por email.</p>
+                              {c?.userPackId && (
+                                <p className="text-xs text-red-600 mt-1">Las clases usadas del pack serán restituidas.</p>
+                              )}
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                disabled={calEntryVerifying}
+                                onClick={async () => {
+                                  setCalEntryVerifying(true)
+                                  setCalEntryError('')
+                                  try {
+                                    const res = await fetch('/api/admin/manage-booking', {
+                                      method: 'POST', credentials: 'include',
+                                      headers: { 'Content-Type': 'application/json' },
+                                      body: JSON.stringify({ id: calEntry!.id, type: calEntry!.type === 'class' ? 'scheduled_class' : 'reservation', action: 'cancel' }),
+                                    })
+                                    if (res.ok) {
+                                      if (calEntry!.type === 'reservation') {
+                                        setReservations(prev => prev.map(x => x.id === calEntry!.id ? { ...x, status: 'cancelled' as const } : x))
+                                      } else {
+                                        setScheduledClasses(prev => prev.map(x => x.id === calEntry!.id ? { ...x, status: 'cancelled' as const } : x))
+                                      }
+                                      closeCalModal()
+                                    } else {
+                                      const d = await res.json().catch(() => ({}))
+                                      setCalEntryError(d.error || 'Error al cancelar')
+                                    }
+                                  } catch { setCalEntryError('Error de red') }
+                                  finally { setCalEntryVerifying(false) }
+                                }}
+                                className="flex-1 px-3 py-2 bg-red-500 hover:bg-red-600 text-white text-xs font-semibold rounded-xl transition-colors disabled:opacity-50"
+                              >
+                                {calEntryVerifying ? <Loader2 className="w-3 h-3 animate-spin inline" /> : 'Sí, cancelar'}
+                              </button>
+                              <button
+                                onClick={() => setCalAction(null)}
+                                className="px-3 py-2 border border-cream-300 text-nude-500 text-xs font-semibold rounded-xl hover:bg-cream-50 transition-colors"
+                              >
+                                Volver
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )
