@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { MercadoPagoConfig, Preference } from 'mercadopago'
 import { getSellerCredentials, getValidSellerToken } from '@/lib/marketplace'
 import { getStoredConfig, getUserSession, getUserById } from '@/lib/storage'
-import { getFeeStatus } from '@/lib/fee'
 import type { PackConfig } from '@/data/config'
 
 export const dynamic = 'force-dynamic'
@@ -62,11 +61,6 @@ export async function POST(request: NextRequest) {
     const baseUrl = getBaseUrl()
     const preference = new Preference(client)
     
-    const feeStatus = await getFeeStatus()
-    const marketplaceFee = feeStatus.enabled 
-      ? Math.round(pack.price * (feeStatus.percentage / 100))
-      : 0
-    
     const purchaseId = `pack_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
     
     const externalRef = JSON.stringify({
@@ -104,7 +98,6 @@ export async function POST(request: NextRequest) {
         statement_descriptor: 'CORPEPILATES',
         external_reference: externalRef,
         notification_url: `${baseUrl}/api/packs/notify`,
-        ...(marketplaceFee > 0 && { marketplace_fee: marketplaceFee }),
       },
     })
     

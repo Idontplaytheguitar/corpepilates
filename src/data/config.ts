@@ -149,6 +149,21 @@ export interface ScheduledClass {
   createdAt: number
 }
 
+export interface PackPurchase {
+  id: string
+  packId: string
+  packName: string
+  classCount: number
+  price: number
+  userId: string
+  userName: string
+  userEmail: string
+  paymentMethod: 'alias' | 'efectivo'
+  status: 'pending' | 'verified' | 'rejected'
+  createdAt: number
+  verifiedAt?: number
+}
+
 export interface CartItem {
   type: 'product' | 'service'
   id: string

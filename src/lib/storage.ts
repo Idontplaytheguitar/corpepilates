@@ -1,4 +1,4 @@
-import { FullConfig, defaultConfig, Reservation, User, UserPack, ScheduledClass, UserProfile } from '@/data/config'
+import { FullConfig, defaultConfig, Reservation, User, UserPack, ScheduledClass, UserProfile, PackPurchase } from '@/data/config'
 import { getRedis } from './redis'
 
 const CONFIG_KEY = 'corpepilates:config'
@@ -8,6 +8,7 @@ const USERS_KEY = 'corpepilates:users'
 const USER_PACKS_KEY = 'corpepilates:user_packs'
 const SCHEDULED_CLASSES_KEY = 'corpepilates:scheduled_classes'
 const USER_SESSIONS_PREFIX = 'corpepilates:user_session:'
+const PACK_PURCHASES_KEY = 'corpepilates:pack_purchases'
 
 export interface OrderItem {
   id?: string
@@ -356,4 +357,43 @@ export async function getPendingScheduledClasses(): Promise<ScheduledClass[]> {
   return classes.filter(
     c => c.status !== 'cancelled' && (!c.paymentStatus || c.paymentStatus === 'pending')
   )
+}
+
+// ── Pack Purchases ─────────────────────────────────────────────────────────────
+export async function getPackPurchases(): Promise<PackPurchase[]> {
+  try {
+    const redis = getRedis()
+    const data = await redis.get(PACK_PURCHASES_KEY)
+    return data ? JSON.parse(data) : []
+  } catch {
+    return []
+  }
+}
+
+export async function getPackPurchaseById(id: string): Promise<PackPurchase | null> {
+  const purchases = await getPackPurchases()
+  return purchases.find(p => p.id === id) || null
+}
+
+export async function savePackPurchase(purchase: PackPurchase): Promise<boolean> {
+  try {
+    const redis = getRedis()
+    const purchases = await getPackPurchases()
+    const existingIndex = purchases.findIndex(p => p.id === purchase.id)
+    if (existingIndex >= 0) {
+      purchases[existingIndex] = purchase
+    } else {
+      purchases.push(purchase)
+    }
+    await redis.set(PACK_PURCHASES_KEY, JSON.stringify(purchases))
+    return true
+  } catch (error) {
+    console.error('Error saving pack purchase:', error)
+    return false
+  }
+}
+
+export async function getPendingPackPurchases(): Promise<PackPurchase[]> {
+  const purchases = await getPackPurchases()
+  return purchases.filter(p => p.status === 'pending')
 }

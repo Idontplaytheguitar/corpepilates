@@ -1,7 +1,6 @@
 import Hero from '@/components/Hero'
 import ServicesSection from '@/components/ServicesSection'
 import PacksSection from '@/components/PacksSection'
-import ProductsSection from '@/components/ProductsSection'
 import AboutSection from '@/components/AboutSection'
 import { getStoredConfig } from '@/lib/storage'
 
@@ -25,19 +24,13 @@ export default async function Home() {
         whatsapp={config.site.whatsapp}
         email={config.site.email}
       />
-      <PacksSection 
+      <PacksSection
         packs={config.packs}
         whatsapp={config.site.whatsapp}
         packsEnabled={config.site.packsEnabled !== false}
         mercadopagoEnabled={config.site.mercadopagoEnabled !== false}
+        aliasConfig={config.site.aliasConfig}
       />
-      {config.site.productsEnabled && (
-        <ProductsSection 
-          products={config.products}
-          whatsapp={config.site.whatsapp}
-          email={config.site.email}
-        />
-      )}
       <AboutSection />
     </>
   )

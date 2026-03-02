@@ -2,10 +2,9 @@
 
 import { useState } from 'react'
 import { createPortal } from 'react-dom'
-import { Clock, Calendar, MessageCircle, Mail, X, ShoppingBag, Check } from 'lucide-react'
+import { Clock, Calendar, MessageCircle, Mail, X } from 'lucide-react'
 import { formatPrice } from '@/data/config'
 import type { ServiceConfig } from '@/data/config'
-import { useCart } from '@/context/CartContext'
 import Link from 'next/link'
 
 interface ServiceCardProps {
@@ -109,23 +108,6 @@ function ContactModal({
 
 export default function ServiceCard({ service, bookingEnabled, location, whatsapp, email }: ServiceCardProps) {
   const [showContactModal, setShowContactModal] = useState(false)
-  const [addedToCart, setAddedToCart] = useState(false)
-  const { addService } = useCart()
-
-  const handleAddToCart = () => {
-    addService({
-      id: service.id,
-      name: service.name,
-      description: service.description,
-      price: service.price,
-      duration: service.duration,
-      durationMinutes: service.durationMinutes,
-      image: service.image,
-      bookable: service.bookable
-    })
-    setAddedToCart(true)
-    setTimeout(() => setAddedToCart(false), 2000)
-  }
 
   const hasContactMethods = whatsapp || email
 
@@ -171,25 +153,13 @@ export default function ServiceCard({ service, bookingEnabled, location, whatsap
             </span>
             <div className="flex items-center gap-2 flex-wrap">
               {bookingEnabled && (
-                <>
-                  <button
-                    onClick={handleAddToCart}
-                    className={`flex items-center gap-1 px-3 py-2 rounded-full text-sm font-medium transition-all ${
-                      addedToCart 
-                        ? 'bg-green-500 text-white' 
-                        : 'bg-sage-100 hover:bg-sage-200 text-sage-700'
-                    }`}
-                  >
-                    {addedToCart ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-4 h-4" />}
-                  </button>
-                  <Link
-                    href={`/reservar?servicio=${service.id}`}
-                    className="flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-full text-sm font-medium transition-colors"
-                  >
-                    <Calendar className="w-4 h-4" />
-                    Reservar
-                  </Link>
-                </>
+                <Link
+                  href={`/reservar?servicio=${service.id}`}
+                  className="flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-full text-sm font-medium transition-colors"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Reservar
+                </Link>
               )}
               {hasContactMethods && (
                 <button

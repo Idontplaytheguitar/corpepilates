@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Calendar, Clock, ArrowLeft, ArrowRight, Check, X, Loader2, AlertCircle, Package } from 'lucide-react'
 import { formatPrice } from '@/data/config'
-import type { UserPack, ScheduledClass, RecurringSchedule, DateException } from '@/data/config'
+import type { UserPack, ScheduledClass, RecurringSchedule, DateException, PackPurchase } from '@/data/config'
 import Link from 'next/link'
 import { useUser } from '@/context/UserContext'
 import WeeklyCalendar from '@/components/WeeklyCalendar'
@@ -34,6 +34,7 @@ function MiCuentaContent() {
   const [savingProfile, setSavingProfile] = useState(false)
   const [profileMessage, setProfileMessage] = useState('')
   
+  const [packPurchases, setPackPurchases] = useState<PackPurchase[]>([])
   const [selectedPack, setSelectedPack] = useState<UserPack | null>(null)
   const [selectedDate, setSelectedDate] = useState<string>('')
   const [availableSlots, setAvailableSlots] = useState<SlotInfo[]>([])
@@ -51,8 +52,9 @@ function MiCuentaContent() {
     Promise.all([
       fetch('/api/user/packs').then(res => res.json()),
       fetch('/api/user/classes').then(res => res.json()),
-      fetch('/api/admin/config').then(res => res.json())
-    ]).then(([packsData, classesData, configData]) => {
+      fetch('/api/admin/config').then(res => res.json()),
+      fetch('/api/user/pack-purchases').then(res => res.json()),
+    ]).then(([packsData, classesData, configData, purchasesData]) => {
       setActivePacks(packsData.active || [])
       setHistoryPacks(packsData.history || [])
       setUpcomingClasses(classesData.upcoming || [])
@@ -60,8 +62,9 @@ function MiCuentaContent() {
       setRecurring(configData.booking?.recurring || [])
       setExceptions(configData.booking?.exceptions || [])
       setBedsCapacity(configData.booking?.bedsCapacity || 4)
+      setPackPurchases(purchasesData.purchases || [])
       setLoading(false)
-      
+
       if (packsData.active?.length > 0) {
         setSelectedPack(packsData.active[0])
       }
@@ -320,6 +323,12 @@ function MiCuentaContent() {
           <>
             {activeTab === 'actividad' && (
               <div className="space-y-4">
+                {packPurchases.some(p => p.status === 'verified' && p.verifiedAt && Date.now() - p.verifiedAt < 24 * 60 * 60 * 1000) && (
+                  <div className="p-4 rounded-xl bg-green-50 border border-green-200 flex items-center gap-3 text-green-700">
+                    <Check className="w-5 h-5 shrink-0" />
+                    <p>¡Tu pack fue confirmado! Ya podés agendar tus clases.</p>
+                  </div>
+                )}
                 <h2 className="font-display text-xl font-semibold text-rose-800">Próximas Clases</h2>
                 
                 {upcomingClasses.length === 0 ? (
@@ -398,6 +407,32 @@ function MiCuentaContent() {
             {activeTab === 'packs' && (
               <div className="grid lg:grid-cols-2 gap-6">
                 <div className="space-y-4">
+                  {packPurchases.filter(p => p.status === 'pending' || p.status === 'rejected').length > 0 && (
+                    <div>
+                      <h2 className="font-display text-xl font-semibold text-rose-800 mb-3">Pagos pendientes</h2>
+                      <div className="space-y-2">
+                        {packPurchases.filter(p => p.status === 'pending' || p.status === 'rejected').map(p => (
+                          <div key={p.id} className="bg-white rounded-xl p-4 border border-cream-200">
+                            <div className="flex items-start justify-between gap-2">
+                              <div>
+                                <p className="font-medium text-rose-800">{p.packName}</p>
+                                <p className="text-sm text-nude-500">{p.classCount} clases · ${p.price?.toLocaleString('es-AR')}</p>
+                                <p className="text-xs text-nude-400 mt-1">
+                                  {p.paymentMethod === 'alias' ? '💳 Transferencia' : '💵 Efectivo'}
+                                  {' · '}{new Date(p.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
+                                </p>
+                              </div>
+                              {p.status === 'pending' ? (
+                                <span className="text-xs px-2 py-1 rounded-full bg-amber-100 text-amber-700 font-medium shrink-0">Pendiente</span>
+                              ) : (
+                                <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 font-medium shrink-0">Rechazado</span>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <h2 className="font-display text-xl font-semibold text-rose-800">Packs Activos</h2>
                   
                   {activePacks.length === 0 ? (

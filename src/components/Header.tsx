@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { ShoppingBag, Menu, X, Settings, User, LogOut, Calendar, Package } from 'lucide-react'
-import { useCart } from '@/context/CartContext'
+import { Menu, X, Settings, User, LogOut, Calendar, Package } from 'lucide-react'
 import { useUser } from '@/context/UserContext'
-import Cart from './Cart'
 
 interface HeaderProps {
   siteName?: string
@@ -21,7 +19,6 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [userMenuOpen, setUserMenuOpen] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
-  const { itemCount, setIsOpen } = useCart()
   const { user, loading: userLoading, login, logout } = useUser()
 
   useEffect(() => {
@@ -177,19 +174,6 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
               )}
               
               <button
-                onClick={() => setIsOpen(true)}
-                className="relative p-2 rounded-full hover:bg-rose-100 transition-colors"
-                aria-label="Carrito de compras"
-              >
-                <ShoppingBag className="w-6 h-6 text-rose-600" />
-                {itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-rose-500 text-white text-xs rounded-full flex items-center justify-center font-medium">
-                    {itemCount}
-                  </span>
-                )}
-              </button>
-
-              <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden p-2 rounded-full hover:bg-rose-100 transition-colors"
                 aria-label="Menú"
@@ -251,7 +235,6 @@ export default function Header({ siteName = 'Corpe Pilates', tagline = 'Pilates 
           )}
         </div>
       </header>
-      <Cart />
     </>
   )
 }

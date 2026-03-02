@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MercadoPagoConfig, Preference } from 'mercadopago'
-import { getStoredConfig, saveReservation, getSlotOccupancy } from '@/lib/storage'
+import { getStoredConfig, saveReservation, getSlotOccupancy, getUserSession } from '@/lib/storage'
 import { getValidSellerToken, getSellerCredentials } from '@/lib/marketplace'
-import { getFeeStatus } from '@/lib/fee'
 import { addMinutes } from '@/data/config'
 import type { Reservation } from '@/data/config'
 import crypto from 'crypto'
@@ -14,6 +13,15 @@ function getBaseUrl(): string {
 
 export async function POST(request: NextRequest) {
   try {
+    const sessionToken = request.cookies.get('user_session')?.value
+    if (!sessionToken) {
+      return NextResponse.json({ error: 'Debés iniciar sesión para reservar' }, { status: 401 })
+    }
+    const session = await getUserSession(sessionToken)
+    if (!session) {
+      return NextResponse.json({ error: 'Sesión inválida. Iniciá sesión nuevamente.' }, { status: 401 })
+    }
+
     const body = await request.json()
     const { serviceId, date, time, customer, paymentMethod = 'mercadopago' } = body
 
@@ -80,11 +88,6 @@ export async function POST(request: NextRequest) {
       const baseUrl = getBaseUrl()
       const preference = new Preference(client)
 
-      const feeStatus = await getFeeStatus()
-      const marketplaceFee = feeStatus.enabled
-        ? Math.round(service.price * (feeStatus.percentage / 100))
-        : 0
-
       const dateFormatted = new Date(date + 'T12:00:00').toLocaleDateString('es-AR', {
         weekday: 'long',
         day: 'numeric',
@@ -117,7 +120,6 @@ export async function POST(request: NextRequest) {
           auto_return: 'approved',
           statement_descriptor: 'CORPEPILATES',
           external_reference: reservationId,
-          ...(marketplaceFee > 0 && { marketplace_fee: marketplaceFee }),
           expires: true,
           expiration_date_from: new Date().toISOString(),
           expiration_date_to: new Date(Date.now() + 30 * 60 * 1000).toISOString(),

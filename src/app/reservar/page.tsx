@@ -10,6 +10,7 @@ import { formatPrice } from '@/data/config'
 import type { ServiceConfig, SiteConfig, RecurringSchedule, DateException } from '@/data/config'
 import Link from 'next/link'
 import ReglamentoModal from '@/components/ReglamentoModal'
+import { useUser } from '@/context/UserContext'
 
 function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -38,6 +39,7 @@ interface PreviousProfile {
 function ReservarContent() {
   const searchParams = useSearchParams()
   const preSelectedServiceId = searchParams.get('servicio')
+  const { user, loading: userLoading, login } = useUser()
 
   const [services, setServices] = useState<ServiceConfig[]>([])
   const [siteConfig, setSiteConfig] = useState<SiteConfig | null>(null)
@@ -209,6 +211,41 @@ function ReservarContent() {
     new Date(dateStr + 'T12:00:00').toLocaleDateString('es-AR', {
       weekday: 'long', day: 'numeric', month: 'long'
     })
+
+  if (userLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 to-cream-100 pt-24 pb-12 px-4 flex items-center justify-center">
+        <Loader2 className="w-8 h-8 text-rose-400 animate-spin" />
+      </div>
+    )
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 to-cream-100 pt-24 pb-12 px-4">
+        <div className="max-w-md mx-auto text-center">
+          <div className="bg-white rounded-2xl shadow-xl p-8">
+            <div className="w-16 h-16 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <User className="w-8 h-8 text-rose-500" />
+            </div>
+            <h1 className="font-display text-2xl font-semibold text-rose-800 mb-2">Iniciá sesión para reservar</h1>
+            <p className="text-nude-500 mb-6">Necesitás una cuenta para poder agendar tu clase.</p>
+            <button
+              onClick={() => login('/reservar')}
+              className="w-full py-3 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
+            >
+              Iniciar sesión con Google
+            </button>
+            <div className="mt-4">
+              <Link href="/" className="inline-flex items-center gap-2 text-rose-500 hover:text-rose-600">
+                <ArrowLeft className="w-4 h-4" />Volver al inicio
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (!bookingEnabled) {
     return (

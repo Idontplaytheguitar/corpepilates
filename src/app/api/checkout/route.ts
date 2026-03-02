@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MercadoPagoConfig, Preference } from 'mercadopago'
 import { getSellerCredentials, getValidSellerToken } from '@/lib/marketplace'
-import { getFeeStatus } from '@/lib/fee'
 
 interface ProductItem {
   product?: { id: string; name: string; price: number; image?: string }
@@ -69,11 +68,6 @@ export async function POST(request: NextRequest) {
 
     const total = productTotal + serviceTotal
 
-    const feeStatus = await getFeeStatus()
-    const marketplaceFee = feeStatus.enabled 
-      ? Math.round(total * (feeStatus.percentage / 100))
-      : 0
-
     const mpItems = [
       ...items.map((item: ProductItem) => ({
         id: item.product?.id ?? item.id ?? 'product',
@@ -121,7 +115,6 @@ export async function POST(request: NextRequest) {
         auto_return: 'approved',
         statement_descriptor: 'CORPEPILATES',
         external_reference: externalRef,
-        ...(marketplaceFee > 0 && { marketplace_fee: marketplaceFee }),
       },
     })
 

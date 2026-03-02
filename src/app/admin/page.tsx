@@ -1,21 +1,13 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Save, Plus, Trash2, Eye, EyeOff, Lock, Check, AlertCircle, Loader2, Image as ImageIcon, CreditCard, Link2, Unlink, Key, Mail, Pause, Play, Calendar, Clock, X, LogOut } from 'lucide-react'
+import { Save, Plus, Trash2, Eye, EyeOff, Lock, Check, AlertCircle, Loader2, Image as ImageIcon, Key, Mail, Pause, Play, Calendar, Clock, X, LogOut } from 'lucide-react'
 import type { FullConfig, ProductConfig, ServiceConfig, SiteConfig, BookingConfig, RecurringSchedule, DateException, Reservation, PackConfig } from '@/data/config'
 import { defaultConfig, formatPrice } from '@/data/config'
+import { DEFAULT_REGLAMENTO } from '@/data/reglamento'
 import ScheduleEditor from '@/components/admin/ScheduleEditor'
 import WeeklyCalendar from '@/components/WeeklyCalendar'
-import dynamic from 'next/dynamic'
-const ReglamentoModal = dynamic(() => import('@/components/ReglamentoModal'), { ssr: false })
 
-interface MercadoPagoStatus {
-  connected: boolean
-  userId?: string
-  connectedAt?: number
-  feeEnabled?: boolean
-  feePercentage?: number
-}
 
 function PaymentRow({ p, onVerified }: { p: any; onVerified: (id: string) => void }) {
   const [verifying, setVerifying] = useState(false)
@@ -74,6 +66,80 @@ function PaymentRow({ p, onVerified }: { p: any; onVerified: (id: string) => voi
   )
 }
 
+function PackPurchaseRow({ p, onAction }: { p: any; onAction: (id: string) => void }) {
+  const [acting, setActing] = useState(false)
+  const [actionError, setActionError] = useState('')
+  const [done, setDone] = useState<'verified' | 'rejected' | null>(null)
+
+  const handleAction = async (action: 'verify' | 'reject') => {
+    setActing(true)
+    setActionError('')
+    try {
+      const res = await fetch('/api/admin/pack-purchases/verify', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ purchaseId: p.id, action }),
+      })
+      if (res.ok) {
+        setDone(action === 'verify' ? 'verified' : 'rejected')
+        setTimeout(() => onAction(p.id), 800)
+      } else {
+        const data = await res.json().catch(() => ({}))
+        setActionError(data.error || `Error ${res.status}`)
+      }
+    } catch {
+      setActionError('Error de red')
+    } finally {
+      setActing(false)
+    }
+  }
+
+  return (
+    <div className="bg-white border border-cream-200 rounded-xl p-4 flex items-center justify-between gap-4">
+      <div className="flex-1 min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="font-medium text-rose-800">{p.name}</p>
+          <span className="text-xs px-2 py-0.5 rounded-full bg-violet-100 text-violet-700 font-medium">Pack</span>
+        </div>
+        <p className="text-sm text-nude-500 mt-0.5">{p.email}</p>
+        <p className="text-sm text-nude-600 mt-1">
+          {p.packName} · {p.classCount} clases · ${p.price?.toLocaleString('es-AR')}
+        </p>
+        <p className="text-xs text-nude-400 mt-1">
+          {p.method === 'alias' ? '💳 Transferencia' : p.method === 'efectivo' ? '💵 Efectivo en clase' : '—'}
+          {' · '}{new Date(p.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+        </p>
+        {actionError && <p className="text-xs text-red-500 mt-1">{actionError}</p>}
+      </div>
+      <div className="flex gap-2 shrink-0">
+        {done === 'verified' ? (
+          <span className="px-3 py-2 rounded-lg text-sm font-semibold bg-green-100 text-green-700">✓ Verificado</span>
+        ) : done === 'rejected' ? (
+          <span className="px-3 py-2 rounded-lg text-sm font-semibold bg-red-100 text-red-700">✕ Rechazado</span>
+        ) : (
+          <>
+            <button
+              onClick={() => handleAction('verify')}
+              disabled={acting}
+              className="px-3 py-2 rounded-lg text-sm font-semibold bg-green-500 hover:bg-green-600 text-white disabled:opacity-60 flex items-center gap-1 transition-colors"
+            >
+              {acting ? <Loader2 className="w-4 h-4 animate-spin" /> : '✓'} Verificar
+            </button>
+            <button
+              onClick={() => handleAction('reject')}
+              disabled={acting}
+              className="px-3 py-2 rounded-lg text-sm font-semibold bg-red-500 hover:bg-red-600 text-white disabled:opacity-60 transition-colors"
+            >
+              ✕
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [password, setPassword] = useState('')
@@ -101,7 +167,7 @@ export default function AdminPage() {
   const [booking, setBooking] = useState<BookingConfig>(defaultConfig.booking!)
   const [reservations, setReservations] = useState<Reservation[]>([])
   const [orders, setOrders] = useState<{ id: string; items: { name: string; quantity: number; price: number }[]; serviceItems: { name: string; quantity: number; price: number }[]; selectedSlots: { serviceName?: string; date: string; time: string; status?: 'pending' | 'completed' | 'absent' }[]; customer: { name: string; email: string; phone: string }; total: number; status: string; deliveryStatus?: 'pending' | 'delivered'; createdAt: number }[]>([])
-  const [activeTab, setActiveTab] = useState<'site' | 'products' | 'services' | 'packs' | 'booking' | 'pedidos' | 'mercadopago' | 'pagos' | 'calendario' | 'reglamento'>('site')
+  const [activeTab, setActiveTab] = useState<'site' | 'services' | 'packs' | 'booking' | 'pedidos' | 'pagos' | 'calendario' | 'reglamento'>('site')
   const [selectedOrder, setSelectedOrder] = useState<typeof orders[0] | null>(null)
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null)
   const [configLoaded, setConfigLoaded] = useState(false)
@@ -110,15 +176,9 @@ export default function AdminPage() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'success' | 'error'>('idle')
   const [hasChanges, setHasChanges] = useState(false)
   
-  const [mpStatus, setMpStatus] = useState<MercadoPagoStatus>({ connected: false })
-  const [mpLoading, setMpLoading] = useState(false)
-  const [feeStatus, setFeeStatus] = useState<{ enabled: boolean; percentage: number; developmentPaid: boolean }>({ enabled: true, percentage: 5, developmentPaid: false })
-  const [payingDev, setPayingDev] = useState(false)
-
   const [pendingPayments, setPendingPayments] = useState<any[]>([])
   const [pendingCount, setPendingCount] = useState(0)
   const [reglamentoText, setReglamentoText] = useState('')
-  const [showReglamentoPreview, setShowReglamentoPreview] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [previewKey, setPreviewKey] = useState(0)
 
@@ -153,16 +213,6 @@ export default function AdminPage() {
         setConfigLoaded(true)
       })
     
-    fetch('/api/oauth/status')
-      .then(res => res.json())
-      .then(data => setMpStatus(data))
-      .catch(() => {})
-    
-    fetch('/api/fee')
-      .then(res => res.json())
-      .then(data => setFeeStatus(data))
-      .catch(() => {})
-    
     fetch('/api/admin/reservations')
       .then(res => res.json())
       .then(data => setReservations(data.reservations || []))
@@ -185,22 +235,9 @@ export default function AdminPage() {
     // Fetch reglamento
     fetch('/api/admin/reglamento')
       .then(r => r.json())
-      .then(data => setReglamentoText(data.reglamento || ''))
+      .then(data => setReglamentoText(data.reglamento || DEFAULT_REGLAMENTO))
       .catch(() => {})
 
-    const params = new URLSearchParams(window.location.search)
-    if (params.get('dev_payment') === 'success') {
-      fetch('/api/fee', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ developmentPaid: true }),
-      }).then(() => {
-        setFeeStatus(prev => ({ ...prev, developmentPaid: true, enabled: false }))
-        window.history.replaceState({}, '', '/admin')
-        alert('¡Gracias por tu pago! La comisión ha sido desactivada.')
-      })
-    }
   }, [])
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -263,32 +300,6 @@ export default function AdminPage() {
   }
 
   const markChanged = () => setHasChanges(true)
-
-  const addProduct = () => {
-    const newProduct: ProductConfig = {
-      id: `producto-${Date.now()}`,
-      name: '',
-      description: '',
-      price: 0,
-      category: 'accesorios',
-      image: '',
-      featured: false,
-    }
-    setProducts([...products, newProduct])
-    markChanged()
-  }
-
-  const updateProduct = (index: number, updates: Partial<ProductConfig>) => {
-    const updated = [...products]
-    updated[index] = { ...updated[index], ...updates }
-    setProducts(updated)
-    markChanged()
-  }
-
-  const removeProduct = (index: number) => {
-    setProducts(products.filter((_, i) => i !== index))
-    markChanged()
-  }
 
   const addService = () => {
     const newService: ServiceConfig = {
@@ -470,7 +481,7 @@ export default function AdminPage() {
 
           <div className="overflow-x-auto shadow-sm mt-2 scrollbar-thin">
             <div className="flex border-b border-cream-200 min-w-max">
-              {(['site', 'products', 'services', 'packs', 'booking', 'pedidos', 'mercadopago'] as const).map(tab => (
+              {(['site', 'services', 'packs', 'booking', 'pedidos'] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -481,12 +492,10 @@ export default function AdminPage() {
                   }`}
                 >
                   {tab === 'site' && '⚙️ Negocio'}
-                  {tab === 'products' && '🛍️ Productos'}
                   {tab === 'services' && '💆 Servicios'}
                   {tab === 'packs' && '📦 Packs'}
                   {tab === 'booking' && '📅 Reservas'}
                   {tab === 'pedidos' && '📦 Pedidos'}
-                  {tab === 'mercadopago' && '💳 MercadoPago'}
                 </button>
               ))}
               <button
@@ -538,8 +547,8 @@ export default function AdminPage() {
             </button>
           )}
 
-          <div className={showPreview ? 'flex gap-0 h-[calc(100vh-200px)] overflow-hidden' : ''}>
-            <div className={showPreview ? 'flex-1 overflow-y-auto p-6' : 'w-full p-6'}>
+          <div>
+            <div className="w-full p-6">
             {activeTab === 'site' && (
               <div className="space-y-6 max-w-2xl">
                 <h2 className="font-display text-xl font-semibold text-rose-800">Información de tu Negocio</h2>
@@ -600,20 +609,6 @@ export default function AdminPage() {
                       onChange={v => { setSite({ ...site, location: v }); markChanged() }}
                       placeholder="Ej: Av. Corrientes 1234, CABA"
                     />
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-rose-700 mb-1">Opciones de entrega de productos</label>
-                      <p className="text-xs text-nude-400 mb-2">Configurá cómo coordinás la entrega de productos</p>
-                      <select
-                        value={site.deliveryMode || 'both'}
-                        onChange={e => { setSite({ ...site, deliveryMode: e.target.value as 'pickup' | 'shipping' | 'both' }); markChanged() }}
-                        className="w-full px-4 py-3 rounded-xl border border-cream-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none"
-                      >
-                        <option value="pickup">Solo retiro en persona</option>
-                        <option value="shipping">Solo envíos</option>
-                        <option value="both">Retiro y envíos</option>
-                      </select>
-                    </div>
                   </div>
                 </div>
 
@@ -857,56 +852,6 @@ export default function AdminPage() {
               </div>
             )}
 
-            {activeTab === 'products' && (
-              <div className="space-y-6">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <h2 className="font-display text-xl font-semibold text-rose-800">Tus Productos</h2>
-                    <p className="text-nude-500 text-sm mt-1">Accesorios, ropa, equipamiento y productos que vendes</p>
-                  </div>
-                  <button
-                    onClick={addProduct}
-                    disabled={!site.productsEnabled}
-                    className="flex items-center justify-center gap-2 px-4 py-2 bg-rose-500 text-white rounded-xl hover:bg-rose-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Agregar Producto
-                  </button>
-                </div>
-
-                <div className="p-4 bg-cream-50 rounded-xl border border-cream-200">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={site.productsEnabled || false}
-                      onChange={e => { setSite({ ...site, productsEnabled: e.target.checked }); markChanged() }}
-                      className="w-5 h-5 rounded border-cream-300 text-rose-500 focus:ring-rose-400"
-                    />
-                    <div>
-                      <span className="font-medium text-rose-800">Habilitar venta de productos</span>
-                      <p className="text-sm text-nude-500">Muestra la seccion de productos en la pagina principal</p>
-                    </div>
-                  </label>
-                </div>
-
-                <div className="space-y-4">
-                  {products.map((product, index) => (
-                    <ProductEditor
-                      key={product.id}
-                      product={product}
-                      onUpdate={updates => updateProduct(index, updates)}
-                      onRemove={() => removeProduct(index)}
-                    />
-                  ))}
-                  {products.length === 0 && (
-                    <div className="text-center py-12 text-nude-400">
-                      No hay productos. Hacé clic en "Agregar Producto" para empezar.
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
             {activeTab === 'services' && (
               <div className="space-y-6">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1076,55 +1021,7 @@ export default function AdminPage() {
                   </p>
                 </div>
 
-                <div className="grid lg:grid-cols-3 gap-6">
-                  <div>
-                    <h3 className="font-medium text-amber-700 mb-3 flex items-center gap-2">
-                      📦 Productos a entregar ({orders.filter(o => o.items.length > 0 && o.deliveryStatus !== 'delivered').length})
-                    </h3>
-                    <div className="space-y-2 max-h-96 overflow-y-auto">
-                      {orders
-                        .filter(o => o.items.length > 0 && o.deliveryStatus !== 'delivered')
-                        .sort((a, b) => b.createdAt - a.createdAt)
-                        .map(order => (
-                          <div
-                            key={order.id}
-                            className="p-4 bg-amber-50 rounded-xl border border-amber-200"
-                          >
-                            <div className="flex justify-between items-start mb-2">
-                              <div>
-                                <p className="font-medium text-amber-800">{order.customer.name}</p>
-                                <p className="text-xs text-amber-600">{order.customer.phone}</p>
-                              </div>
-                              <p className="text-xs text-amber-500">
-                                {new Date(order.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
-                              </p>
-                            </div>
-                            <div className="space-y-1 mb-3">
-                              {order.items.map((item, idx) => (
-                                <p key={idx} className="text-sm text-amber-700">• {item.name} x{item.quantity}</p>
-                              ))}
-                            </div>
-                            <button
-                              onClick={async () => {
-                                await fetch('/api/admin/orders', {
-                                  method: 'POST',
-                                  headers: { 'Content-Type': 'application/json' },
-                                  body: JSON.stringify({ orderId: order.id, deliveryStatus: 'delivered' })
-                                })
-                                setOrders(orders.map(o => o.id === order.id ? { ...o, deliveryStatus: 'delivered' } : o))
-                              }}
-                              className="w-full py-2 bg-amber-500 text-white rounded-lg text-sm font-medium hover:bg-amber-600 transition-colors"
-                            >
-                              ✓ Marcar como entregado
-                            </button>
-                          </div>
-                        ))}
-                      {orders.filter(o => o.items.length > 0 && o.deliveryStatus !== 'delivered').length === 0 && (
-                        <p className="text-nude-400 text-sm text-center py-8">No hay productos pendientes</p>
-                      )}
-                    </div>
-                  </div>
-
+                <div className="grid lg:grid-cols-2 gap-6">
                   <div>
                     <h3 className="font-medium text-sage-700 mb-3 flex items-center gap-2">
                       <Calendar className="w-5 h-5" />
@@ -1278,13 +1175,19 @@ export default function AdminPage() {
                 {selectedReservation && (
                   <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setSelectedReservation(null)}>
                     <div className="bg-white rounded-2xl p-6 max-w-md w-full" onClick={e => e.stopPropagation()}>
-                      <div className="flex justify-between items-start mb-4">
-                        <h3 className="font-display text-xl font-semibold text-rose-800">Detalle del Turno</h3>
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-display text-2xl font-bold text-rose-800">{selectedReservation.customerName}</h3>
+                          <p className="text-sm text-nude-500">{selectedReservation.customerEmail}</p>
+                          {selectedReservation.customerPhone && (
+                            <p className="text-sm text-nude-500">{selectedReservation.customerPhone}</p>
+                          )}
+                        </div>
                         <button onClick={() => setSelectedReservation(null)} className="text-nude-400 hover:text-nude-600">
                           <X className="w-5 h-5" />
                         </button>
                       </div>
-                      <div className="space-y-4">
+                      <div className="space-y-4 mt-4">
                         <div className="p-4 bg-sage-50 rounded-xl">
                           <p className="font-medium text-sage-800 text-lg">{selectedReservation.serviceName}</p>
                           <p className="text-sage-600">{formatPrice(selectedReservation.servicePrice)}</p>
@@ -1300,12 +1203,6 @@ export default function AdminPage() {
                             <p className="text-xs text-nude-400 uppercase">Horario</p>
                             <p className="font-medium text-nude-700">{selectedReservation.time} - {selectedReservation.endTime}</p>
                           </div>
-                        </div>
-                        <div className="border-t pt-4">
-                          <p className="text-xs text-nude-400 uppercase mb-2">Cliente</p>
-                          <p className="font-medium">{selectedReservation.customerName}</p>
-                          <p className="text-sm text-nude-600">{selectedReservation.customerEmail}</p>
-                          <p className="text-sm text-nude-600">{selectedReservation.customerPhone}</p>
                         </div>
                         <div className="flex gap-3 pt-2">
                           <a
@@ -1436,176 +1333,6 @@ export default function AdminPage() {
               </div>
             )}
 
-            {activeTab === 'mercadopago' && (
-              <div className="space-y-6 max-w-2xl">
-                <div>
-                  <h2 className="font-display text-xl font-semibold text-rose-800">MercadoPago</h2>
-                  <p className="text-nude-500 text-sm mt-1">
-                    Configuracion de pagos y comisiones
-                  </p>
-                </div>
-
-                <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
-                  <label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={site.mercadopagoEnabled !== false}
-                      onChange={e => { setSite({ ...site, mercadopagoEnabled: e.target.checked }); markChanged() }}
-                      className="w-5 h-5 rounded border-blue-300 text-blue-500 focus:ring-blue-400"
-                    />
-                    <div>
-                      <span className="font-medium text-blue-800">Habilitar pagos con MercadoPago</span>
-                      <p className="text-sm text-nude-500">Permite cobrar por productos, planes y packs mediante MercadoPago</p>
-                    </div>
-                  </label>
-                </div>
-
-                {!site.mercadopagoEnabled && (
-                  <div className="mt-4 p-4 bg-cream-50 rounded-xl border border-cream-200">
-                    <h4 className="font-medium text-rose-800 mb-3">Datos de transferencia (Alias/CVU)</h4>
-                    <div className="grid gap-3">
-                      {(['alias', 'cbu', 'banco', 'titular'] as const).map(field => (
-                        <div key={field}>
-                          <label className="block text-sm font-medium text-rose-700 mb-1 capitalize">{field === 'cbu' ? 'CBU/CVU' : field.charAt(0).toUpperCase() + field.slice(1)}</label>
-                          <input
-                            type="text"
-                            value={(site?.aliasConfig as any)?.[field] || ''}
-                            onChange={e => {
-                              setSite({ ...site, aliasConfig: { ...(site.aliasConfig as any || {}), [field]: e.target.value } })
-                              markChanged()
-                            }}
-                            className="w-full px-3 py-2 rounded-lg border border-cream-200 focus:border-rose-400 outline-none text-sm"
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {!feeStatus.developmentPaid && (
-                  <div className="p-6 bg-amber-50 rounded-xl border border-amber-200">
-                    <div className="flex items-start gap-4">
-                      <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <AlertCircle className="w-6 h-6 text-amber-600" />
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-medium text-amber-800 mb-1">Comisión activa: {feeStatus.percentage}%</h3>
-                        <p className="text-sm text-amber-700 mb-4">
-                          Se cobra una comisión del {feeStatus.percentage}% en cada venta. 
-                          Pagando el desarrollo, eliminás esta comisión para siempre.
-                        </p>
-                        <div className="flex items-center justify-between p-3 bg-white rounded-lg mb-4">
-                          <span className="font-medium text-amber-800">Pago único</span>
-                          <span className="text-2xl font-bold text-amber-700">$300.000</span>
-                        </div>
-                        <button
-                          onClick={async () => {
-                            setPayingDev(true)
-                            try {
-                              const res = await fetch('/api/checkout/development', { method: 'POST' })
-                              const data = await res.json()
-                              if (data.init_point) {
-                                window.location.href = data.init_point
-                              }
-                            } catch {
-                              alert('Error al crear el pago')
-                            }
-                            setPayingDev(false)
-                          }}
-                          disabled={payingDev}
-                          className="w-full py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-                        >
-                          <CreditCard className="w-5 h-5" />
-                          {payingDev ? 'Procesando...' : 'Pagar y eliminar comisión'}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {feeStatus.developmentPaid && (
-                  <div className="p-6 bg-sage-50 rounded-xl border border-sage-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-sage-100 rounded-full flex items-center justify-center">
-                        <Check className="w-6 h-6 text-sage-600" />
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-sage-800">¡Desarrollo pagado!</h3>
-                        <p className="text-sm text-sage-600">
-                          No se cobra ninguna comisión en tus ventas
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="border-t border-cream-200 pt-6">
-                  <h3 className="font-display text-lg font-semibold text-rose-800 mb-4">Conexión de cuenta</h3>
-                  
-                  {mpStatus.connected ? (
-                    <div className="p-4 bg-sage-50 rounded-xl border border-sage-200">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <Check className="w-5 h-5 text-sage-600" />
-                          <div>
-                            <span className="font-medium text-sage-800">Cuenta conectada</span>
-                            <p className="text-sm text-sage-600">ID: {mpStatus.userId}</p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={async () => {
-                            if (!confirm('¿Seguro que querés desconectar tu cuenta?')) return
-                            setMpLoading(true)
-                            await fetch('/api/oauth/status', {
-                              method: 'POST',
-                              headers: {
-                                'Content-Type': 'application/json',
-                              },
-                              credentials: 'include',
-                              body: JSON.stringify({ action: 'disconnect' }),
-                            })
-                            setMpStatus({ connected: false })
-                            setMpLoading(false)
-                          }}
-                          disabled={mpLoading}
-                          className="text-rose-500 hover:text-rose-700 text-sm flex items-center gap-1"
-                        >
-                          <Unlink className="w-4 h-4" />
-                          Desconectar
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="p-4 bg-cream-50 rounded-xl border border-cream-200">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <span className="font-medium text-rose-800">No hay cuenta conectada</span>
-                          <p className="text-sm text-nude-500">Conectá tu MercadoPago para recibir pagos</p>
-                        </div>
-                        <a
-                          href="/api/oauth/connect"
-                          className="flex items-center gap-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors"
-                        >
-                          <Link2 className="w-4 h-4" />
-                          Conectar
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="p-4 bg-nude-50 rounded-xl border border-nude-200">
-                  <h4 className="font-medium text-nude-700 mb-2">💡 ¿Cómo funciona?</h4>
-                  <ul className="text-sm text-nude-600 space-y-1">
-                    <li>• Conectás tu cuenta de MercadoPago</li>
-                    <li>• Los clientes pagan y el dinero va a tu cuenta</li>
-                    {!feeStatus.developmentPaid && <li>• Se cobra {feeStatus.percentage}% de comisión hasta pagar el desarrollo</li>}
-                    {feeStatus.developmentPaid && <li>• ✅ Sin comisiones - desarrollo pagado</li>}
-                  </ul>
-                </div>
-              </div>
-            )}
-
             {activeTab === 'pagos' && (
               <div>
                 <h2 className="font-display text-xl font-semibold text-rose-800 mb-6">
@@ -1617,17 +1344,41 @@ export default function AdminPage() {
                     <p>No hay pagos pendientes</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {pendingPayments.map((p: any) => (
-                      <PaymentRow
-                        key={p.id}
-                        p={p}
-                        onVerified={(id) => {
-                          setPendingPayments(prev => prev.filter((x: any) => x.id !== id))
-                          setPendingCount(c => c - 1)
-                        }}
-                      />
-                    ))}
+                  <div className="space-y-6">
+                    {pendingPayments.some((p: any) => p.type === 'pack_purchase') && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-nude-500 uppercase tracking-wide mb-3">Compras de packs</h3>
+                        <div className="space-y-3">
+                          {pendingPayments.filter((p: any) => p.type === 'pack_purchase').map((p: any) => (
+                            <PackPurchaseRow
+                              key={p.id}
+                              p={p}
+                              onAction={(id) => {
+                                setPendingPayments(prev => prev.filter((x: any) => x.id !== id))
+                                setPendingCount(c => c - 1)
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {pendingPayments.some((p: any) => p.type !== 'pack_purchase') && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-nude-500 uppercase tracking-wide mb-3">Reservas y clases</h3>
+                        <div className="space-y-3">
+                          {pendingPayments.filter((p: any) => p.type !== 'pack_purchase').map((p: any) => (
+                            <PaymentRow
+                              key={p.id}
+                              p={p}
+                              onVerified={(id) => {
+                                setPendingPayments(prev => prev.filter((x: any) => x.id !== id))
+                                setPendingCount(c => c - 1)
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -1648,17 +1399,82 @@ export default function AdminPage() {
             {activeTab === 'reglamento' && (
               <div>
                 <h2 className="font-display text-xl font-semibold text-rose-800 mb-2">Reglamento del estudio</h2>
-                <p className="text-nude-500 text-sm mb-6">
+                <p className="text-nude-500 text-sm mb-4">
                   Este texto se muestra a los usuarios antes de cada reserva. Usá *Título* para negritas y - para listas.
                 </p>
-                <textarea
-                  value={reglamentoText}
-                  onChange={e => setReglamentoText(e.target.value)}
-                  rows={16}
-                  className="w-full px-4 py-3 rounded-xl border border-cream-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none font-mono text-sm resize-y"
-                  placeholder="Ingresá el reglamento aquí..."
-                />
-                <div className="flex gap-3 mt-4">
+
+                <div className="flex gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const ta = document.getElementById('reglamento-textarea') as HTMLTextAreaElement
+                      if (!ta) return
+                      const start = ta.selectionStart
+                      const end = ta.selectionEnd
+                      const text = reglamentoText
+                      if (start !== end) {
+                        const selected = text.slice(start, end)
+                        setReglamentoText(text.slice(0, start) + '*' + selected + '*' + text.slice(end))
+                      } else {
+                        const newText = text.slice(0, start) + '*Título*' + text.slice(end)
+                        setReglamentoText(newText)
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-cream-100 hover:bg-cream-200 text-rose-700 rounded-lg text-sm font-bold transition-colors"
+                    title="Insertar título en negrita"
+                  >
+                    B
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const ta = document.getElementById('reglamento-textarea') as HTMLTextAreaElement
+                      if (!ta) return
+                      const start = ta.selectionStart
+                      const text = reglamentoText
+                      const lineStart = text.lastIndexOf('\n', start - 1) + 1
+                      const before = text.slice(0, lineStart)
+                      const after = text.slice(lineStart)
+                      if (after.startsWith('- ')) {
+                        setReglamentoText(before + after.slice(2))
+                      } else {
+                        setReglamentoText(before + '- ' + after)
+                      }
+                    }}
+                    className="px-3 py-1.5 bg-cream-100 hover:bg-cream-200 text-rose-700 rounded-lg text-sm transition-colors"
+                    title="Insertar/quitar item de lista"
+                  >
+                    • Lista
+                  </button>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <textarea
+                      id="reglamento-textarea"
+                      value={reglamentoText}
+                      onChange={e => setReglamentoText(e.target.value)}
+                      rows={20}
+                      style={{ minHeight: '500px' }}
+                      className="w-full px-4 py-3 rounded-xl border border-cream-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none font-mono text-sm resize-y"
+                      placeholder="Ingresá el reglamento aquí..."
+                    />
+                  </div>
+                  <div className="border border-cream-200 rounded-xl p-4 overflow-y-auto text-sm leading-relaxed" style={{ minHeight: '500px', maxHeight: '600px' }}>
+                    <p className="text-xs text-nude-400 uppercase mb-3 font-medium">Vista previa</p>
+                    {reglamentoText.split('\n').map((line, i) => {
+                      if (line.startsWith('*') && line.endsWith('*')) {
+                        return <p key={i} className="font-semibold text-rose-800 mt-4 mb-1">{line.slice(1, -1)}</p>
+                      }
+                      if (line.startsWith('- ')) {
+                        return <p key={i} className="text-nude-700 pl-4 mb-1">• {line.slice(2)}</p>
+                      }
+                      return line ? <p key={i} className="text-nude-700 mb-1">{line}</p> : <br key={i} />
+                    })}
+                  </div>
+                </div>
+
+                <div className="mt-4">
                   <button
                     onClick={async () => {
                       await fetch('/api/admin/reglamento', {
@@ -1671,35 +1487,29 @@ export default function AdminPage() {
                   >
                     Guardar reglamento
                   </button>
-                  <button
-                    onClick={() => setShowReglamentoPreview(true)}
-                    className="px-6 py-2.5 border-2 border-rose-300 text-rose-700 rounded-xl font-medium hover:bg-rose-50 transition-colors"
-                  >
-                    Vista previa
-                  </button>
                 </div>
-                {showReglamentoPreview && (
-                  <ReglamentoModal
-                    mode="readonly"
-                    customText={reglamentoText}
-                    onClose={() => setShowReglamentoPreview(false)}
-                  />
-                )}
               </div>
             )}
             </div>
             {showPreview && (
-              <div className="w-[420px] border-l border-cream-200 flex flex-col shrink-0">
-                <div className="h-10 bg-cream-100 flex items-center justify-between px-4 text-xs text-nude-500 font-medium shrink-0">
-                  <span>Vista previa del sitio</span>
-                  <button onClick={() => setPreviewKey(k => k + 1)} className="hover:text-rose-500 transition-colors">↺ Actualizar</button>
+              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPreview(false)}>
+                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col" style={{ height: '85vh' }} onClick={e => e.stopPropagation()}>
+                  <div className="h-12 bg-cream-100 flex items-center justify-between px-4 text-sm text-nude-600 font-medium shrink-0 rounded-t-2xl">
+                    <span>Vista previa del sitio</span>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => setPreviewKey(k => k + 1)} className="hover:text-rose-500 transition-colors">↺ Actualizar</button>
+                      <button onClick={() => setShowPreview(false)} className="hover:text-rose-500 transition-colors">
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                  <iframe
+                    key={previewKey}
+                    src="/"
+                    className="flex-1 w-full border-0 rounded-b-2xl"
+                    title="Site preview"
+                  />
                 </div>
-                <iframe
-                  key={previewKey}
-                  src="/"
-                  className="flex-1 w-full border-0"
-                  title="Site preview"
-                />
               </div>
             )}
           </div>
@@ -1790,191 +1600,6 @@ function FormField({
           ✓ Válido
         </p>
       )}
-    </div>
-  )
-}
-
-function ProductEditor({
-  product,
-  onUpdate,
-  onRemove,
-}: {
-  product: ProductConfig
-  onUpdate: (updates: Partial<ProductConfig>) => void
-  onRemove: () => void
-}) {
-  const [uploading, setUploading] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-
-    setUploading(true)
-    const formData = new FormData()
-    formData.append('file', file)
-
-    try {
-      const res = await fetch('/api/upload', { method: 'POST', body: formData })
-      const data = await res.json()
-      if (data.url) {
-        onUpdate({ image: data.url })
-      } else {
-        alert(data.error || 'Error al subir imagen')
-      }
-    } catch {
-      alert('Error al subir imagen')
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  return (
-    <div className={`p-4 sm:p-5 rounded-xl border ${product.paused ? 'bg-amber-50 border-amber-200' : 'bg-cream-50 border-cream-200'}`}>
-      {product.paused && (
-        <div className="flex items-center gap-2 text-amber-700 text-sm mb-3 font-medium">
-          <Pause className="w-4 h-4" />
-          Producto pausado - no visible en la tienda
-        </div>
-      )}
-      <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-        <div className="flex-shrink-0 mx-auto sm:mx-0">
-          <div 
-            className={`w-24 h-24 rounded-xl bg-white border-2 border-dashed flex items-center justify-center overflow-hidden cursor-pointer transition-colors ${product.paused ? 'border-amber-300 hover:border-amber-400 opacity-60' : 'border-cream-300 hover:border-rose-400'}`}
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {uploading ? (
-              <Loader2 className="w-6 h-6 text-rose-400 animate-spin" />
-            ) : product.image ? (
-              <img src={product.image} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <div className="text-center p-2">
-                <ImageIcon className="w-6 h-6 text-cream-400 mx-auto" />
-                <span className="text-xs text-cream-400 mt-1 block">Subir foto</span>
-              </div>
-            )}
-          </div>
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="hidden"
-          />
-        </div>
-
-        <div className="flex-1 space-y-3">
-          <div className="flex items-center gap-3">
-            <input
-              type="text"
-              value={product.name}
-              onChange={e => onUpdate({ name: e.target.value })}
-              placeholder="Nombre del producto"
-              className="flex-1 px-3 py-2 rounded-lg border border-cream-200 focus:border-rose-400 outline-none text-rose-800 font-medium"
-            />
-            <button
-              onClick={onRemove}
-              className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-              title="Eliminar producto"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-            <div>
-              <label className="block text-xs text-nude-500 mb-1">Precio (ARS)</label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-nude-400">$</span>
-                <input
-                  type="number"
-                  value={product.price || ''}
-                  onChange={e => onUpdate({ price: parseInt(e.target.value) || 0 })}
-                  placeholder="0"
-                  className="w-full pl-7 pr-3 py-2 rounded-lg border border-cream-200 focus:border-rose-400 outline-none"
-                />
-              </div>
-              {product.price > 0 && (
-                <span className="text-xs text-sage-600 mt-1 block">
-                  Se muestra: {formatPrice(product.price)}
-                </span>
-              )}
-            </div>
-            <div>
-              <label className="block text-xs text-nude-500 mb-1">Categoría</label>
-              <select
-                value={product.category}
-                onChange={e => onUpdate({ category: e.target.value as ProductConfig['category'] })}
-                className="w-full px-3 py-2 rounded-lg border border-cream-200 focus:border-rose-400 outline-none"
-              >
-                <option value="accesorios">🎯 Accesorios</option>
-                <option value="ropa">👕 Ropa</option>
-                <option value="equipamiento">🏋️ Equipamiento</option>
-                <option value="suplementos">💊 Suplementos</option>
-              </select>
-            </div>
-            <div className="flex items-end">
-              <label className="flex items-center gap-2 px-3 py-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={product.featured}
-                  onChange={e => onUpdate({ featured: e.target.checked })}
-                  className="w-4 h-4 rounded border-cream-300 text-rose-500 focus:ring-rose-400"
-                />
-                <span className="text-sm text-rose-700">⭐ Destacado</span>
-              </label>
-            </div>
-            <div className="flex items-end">
-              <button
-                type="button"
-                onClick={() => onUpdate({ paused: !product.paused })}
-                className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  product.paused
-                    ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
-                    : 'bg-sage-100 text-sage-700 hover:bg-sage-200'
-                }`}
-              >
-                {product.paused ? <Play className="w-4 h-4" /> : <Pause className="w-4 h-4" />}
-                {product.paused ? 'Activar' : 'Pausar'}
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <label className="flex items-center gap-2 text-xs text-nude-500 mb-1">
-                <input
-                  type="checkbox"
-                  checked={product.trackStock}
-                  onChange={e => onUpdate({ trackStock: e.target.checked, stock: e.target.checked ? (product.stock || 0) : undefined })}
-                  className="w-3 h-3 rounded border-cream-300 text-rose-500"
-                />
-                Controlar stock
-              </label>
-              {product.trackStock && (
-                <input
-                  type="number"
-                  value={product.stock ?? ''}
-                  onChange={e => onUpdate({ stock: parseInt(e.target.value) || 0 })}
-                  placeholder="0"
-                  min="0"
-                  className="w-full px-3 py-2 rounded-lg border border-cream-200 focus:border-rose-400 outline-none"
-                />
-              )}
-            </div>
-            <div>
-              <label className="block text-xs text-nude-500 mb-1">Descripción</label>
-              <textarea
-                value={product.description}
-                onChange={e => onUpdate({ description: e.target.value })}
-                placeholder="Describí brevemente..."
-                rows={2}
-                className="w-full px-3 py-2 rounded-lg border border-cream-200 focus:border-rose-400 outline-none resize-none"
-              />
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
