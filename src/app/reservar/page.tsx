@@ -22,13 +22,6 @@ function validatePhone(phone: string): boolean {
   return /^\+?\d{8,15}$/.test(clean)
 }
 
-interface AliasConfig {
-  alias: string
-  cbu: string
-  banco: string
-  titular: string
-}
-
 interface PreviousProfile {
   name: string
   email: string
@@ -49,7 +42,7 @@ function ReservarContent() {
   const [bookingEnabled, setBookingEnabled] = useState(false)
   const [mercadopagoEnabled, setMercadopagoEnabled] = useState(false)
   const [singleClassEnabled, setSingleClassEnabled] = useState(true)
-  const [aliasConfig, setAliasConfig] = useState<AliasConfig | null>(null)
+  const [aliasConfig, setAliasConfig] = useState<SiteConfig['aliasConfig'] | null>(null)
   const [reglamentoText, setReglamentoText] = useState('')
 
   const [selectedService, setSelectedService] = useState<ServiceConfig | null>(null)
@@ -651,7 +644,7 @@ function ReservarContent() {
                       Pagar con MercadoPago
                     </button>
                   )}
-                  {aliasConfig && (
+                  {aliasConfig && (aliasConfig.alias || aliasConfig.cbu) && (
                     <button onClick={() => handleSubmit('alias')} disabled={submitting || !isFormValid()}
                       className="w-full py-4 bg-rose-500 hover:bg-rose-600 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
                       {submitting ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
@@ -677,7 +670,7 @@ function ReservarContent() {
                 </h2>
                 <p className="text-nude-500 mb-6">
                   Tu solicitud fue recibida. El estudio confirmará tu reserva en breve.
-                  {paymentMethod === 'alias' && ' Una vez confirmada, te llegará la info de pago.'}
+                  {paymentMethod === 'alias' && ' Usá los datos a continuación para realizar la transferencia.'}
                 </p>
 
                 <div className="bg-cream-50 rounded-xl p-4 mb-6 text-left border border-cream-200">
