@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
       id: r.id, type: 'reservation', name: r.customerName, email: r.customerEmail,
       date: r.date, time: r.time, service: r.serviceName, price: r.servicePrice,
       method: r.paymentMethod || 'unknown', createdAt: r.createdAt,
+      confirmed: r.status === 'confirmed',
     })),
     ...classes.map(c => ({
       id: c.id, type: 'scheduled_class', name: c.customerName, email: c.customerEmail,

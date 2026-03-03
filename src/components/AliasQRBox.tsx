@@ -45,8 +45,8 @@ export default function AliasQRBox({ aliasConfig, accentColor = 'rose', amount }
 
   return (
     <>
-      <div className={`border rounded-xl p-4 ${bg}`}>
-        <div className="flex items-center justify-between mb-3">
+      <div className={`border rounded-xl p-5 text-center ${bg}`}>
+        <div className="flex items-center justify-between mb-4">
           <p className={`text-sm font-medium ${titleColor}`}>Datos para la transferencia</p>
           {cbu && (
             <button
@@ -58,51 +58,51 @@ export default function AliasQRBox({ aliasConfig, accentColor = 'rose', amount }
             </button>
           )}
         </div>
-        <div className="space-y-2">
+        <div className="space-y-3">
           {alias && (
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs text-nude-400 block">Alias</span>
+            <div>
+              <span className="text-xs text-nude-400 block mb-0.5">Alias</span>
+              <div className="flex items-center justify-center gap-1.5">
                 <span className="text-sm font-mono font-medium text-rose-800">{alias}</span>
+                <button
+                  onClick={() => handleCopy(alias, 'alias')}
+                  className={`p-1 rounded-lg ${hoverBg} ${textColor} transition-colors`}
+                  title="Copiar alias"
+                >
+                  {copiedField === 'alias' ? <CheckCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
               </div>
-              <button
-                onClick={() => handleCopy(alias, 'alias')}
-                className={`p-2 rounded-lg ${hoverBg} ${textColor} transition-colors`}
-                title="Copiar alias"
-              >
-                {copiedField === 'alias' ? <CheckCheck className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              </button>
             </div>
           )}
           {cbu && (
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-xs text-nude-400 block">CBU/CVU</span>
+            <div>
+              <span className="text-xs text-nude-400 block mb-0.5">CBU/CVU</span>
+              <div className="flex items-center justify-center gap-1.5">
                 <span className="text-xs font-mono font-medium text-rose-800 break-all">{cbu}</span>
+                <button
+                  onClick={() => handleCopy(cbu, 'cbu')}
+                  className={`p-1 rounded-lg ${hoverBg} ${textColor} transition-colors flex-shrink-0`}
+                  title="Copiar CBU"
+                >
+                  {copiedField === 'cbu' ? <CheckCheck className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
               </div>
-              <button
-                onClick={() => handleCopy(cbu, 'cbu')}
-                className={`p-2 rounded-lg ${hoverBg} ${textColor} transition-colors flex-shrink-0 ml-2`}
-                title="Copiar CBU"
-              >
-                {copiedField === 'cbu' ? <CheckCheck className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              </button>
             </div>
           )}
           {banco && (
             <div>
-              <span className="text-xs text-nude-400 block">Banco</span>
+              <span className="text-xs text-nude-400 block mb-0.5">Banco</span>
               <span className="text-sm font-medium text-rose-800">{banco}</span>
             </div>
           )}
           {titular && (
             <div>
-              <span className="text-xs text-nude-400 block">Titular</span>
+              <span className="text-xs text-nude-400 block mb-0.5">Titular</span>
               <span className="text-sm font-medium text-rose-800">{titular}</span>
             </div>
           )}
           {amount !== undefined && amount > 0 && (
-            <div className="pt-2 border-t border-current/10 flex justify-between font-semibold text-sm">
+            <div className="pt-3 border-t border-current/10 flex justify-between font-semibold text-sm">
               <span>Total</span>
               <span className={titleColor}>${amount.toLocaleString('es-AR')}</span>
             </div>

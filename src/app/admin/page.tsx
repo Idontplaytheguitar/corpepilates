@@ -10,36 +10,45 @@ import WeeklyCalendar from '@/components/WeeklyCalendar'
 
 
 function PaymentRow({ p, onVerified }: { p: any; onVerified: (id: string) => void }) {
-  const [verifying, setVerifying] = useState(false)
-  const [verifyError, setVerifyError] = useState('')
-  const [verified, setVerified] = useState(false)
+  const [confirmingReservation, setConfirmingReservation] = useState(false)
+  const [confirmingPayment, setConfirmingPayment] = useState(false)
+  const [error, setError] = useState('')
+  const [reservationConfirmed, setReservationConfirmed] = useState(p.confirmed || p.type !== 'reservation')
+  const [paymentVerified, setPaymentVerified] = useState(false)
 
-  const handleVerify = async () => {
-    setVerifying(true)
-    setVerifyError('')
+  const doAction = async (action: 'confirm' | 'verify_payment') => {
+    const setLoading = action === 'confirm' ? setConfirmingReservation : setConfirmingPayment
+    setLoading(true)
+    setError('')
     try {
       const res = await fetch('/api/admin/verify-payment', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: p.id, type: p.type }),
+        body: JSON.stringify({ id: p.id, type: p.type, action }),
       })
       if (res.ok) {
-        setVerified(true)
-        setTimeout(() => onVerified(p.id), 800)
+        if (action === 'confirm') {
+          setReservationConfirmed(true)
+        } else {
+          setPaymentVerified(true)
+          setTimeout(() => onVerified(p.id), 800)
+        }
       } else {
         const data = await res.json().catch(() => ({}))
-        setVerifyError(data.error || `Error ${res.status}`)
+        setError(data.error || `Error ${res.status}`)
       }
     } catch {
-      setVerifyError('Error de red')
+      setError('Error de red')
     } finally {
-      setVerifying(false)
+      setLoading(false)
     }
   }
 
+  const allDone = reservationConfirmed && paymentVerified
+
   return (
-    <div className="bg-white border border-cream-200 rounded-xl p-4 flex items-center justify-between gap-4">
+    <div className="bg-white border border-cream-200 rounded-xl p-4 flex items-start justify-between gap-4">
       <div className="flex-1 min-w-0">
         <p className="font-medium text-rose-800">{p.name}</p>
         <p className="text-sm text-nude-500 truncate">
@@ -49,19 +58,33 @@ function PaymentRow({ p, onVerified }: { p: any; onVerified: (id: string) => voi
           {p.method === 'alias' ? '💳 Transferencia' : p.method === 'efectivo' ? '💵 Efectivo' : '—'}
           {p.price > 0 && ` · $${p.price.toLocaleString('es-AR')}`}
         </p>
-        {verifyError && <p className="text-xs text-red-500 mt-1">{verifyError}</p>}
+        {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
       </div>
-      <button
-        onClick={handleVerify}
-        disabled={verifying || verified}
-        className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-1 shrink-0 ${
-          verified
-            ? 'bg-green-100 text-green-700'
-            : 'bg-green-500 hover:bg-green-600 text-white disabled:opacity-60'
-        }`}
-      >
-        {verifying ? <Loader2 className="w-4 h-4 animate-spin" /> : verified ? '✓ Verificado' : '✓ Verificar'}
-      </button>
+      <div className="flex flex-col gap-1.5 shrink-0">
+        {/* Confirm reservation — only for reservations */}
+        {p.type === 'reservation' && (
+          reservationConfirmed
+            ? <span className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700">✓ Reserva confirmada</span>
+            : <button
+                onClick={() => doAction('confirm')}
+                disabled={confirmingReservation}
+                className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-500 hover:bg-blue-600 text-white disabled:opacity-60 flex items-center gap-1 transition-colors"
+              >
+                {confirmingReservation ? <Loader2 className="w-3 h-3 animate-spin" /> : '✓'} Confirmar reserva
+              </button>
+        )}
+        {/* Verify payment */}
+        {paymentVerified
+          ? <span className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-100 text-green-700">✓ Pago verificado</span>
+          : <button
+              onClick={() => doAction('verify_payment')}
+              disabled={confirmingPayment || allDone}
+              className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-500 hover:bg-green-600 text-white disabled:opacity-60 flex items-center gap-1 transition-colors"
+            >
+              {confirmingPayment ? <Loader2 className="w-3 h-3 animate-spin" /> : '✓'} Verificar pago
+            </button>
+        }
+      </div>
     </div>
   )
 }
@@ -535,7 +558,7 @@ export default function AdminPage() {
                     : 'text-nude-500 hover:text-rose-500'
                 }`}
               >
-                💸 Pagos
+                ✓ Verificar
                 {pendingCount > 0 && (
                   <span className="absolute top-2 right-2 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
                     {pendingCount > 9 ? '9+' : pendingCount}
