@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { QRCodeSVG } from 'qrcode.react'
 import { Copy, CheckCheck, QrCode, X } from 'lucide-react'
 
@@ -20,12 +20,20 @@ interface Props {
 export default function AliasQRBox({ aliasConfig, accentColor = 'rose', amount }: Props) {
   const [copiedField, setCopiedField] = useState<string | null>(null)
   const [showQR, setShowQR] = useState(false)
+  const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  const handleCopy = (value: string | undefined, field: string) => {
+  useEffect(() => {
+    return () => { if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current) }
+  }, [])
+
+  const handleCopy = async (value: string | undefined, field: string) => {
     if (!value) return
-    navigator.clipboard.writeText(value)
-    setCopiedField(field)
-    setTimeout(() => setCopiedField(null), 2000)
+    try {
+      await navigator.clipboard.writeText(value)
+      setCopiedField(field)
+      if (copyTimeoutRef.current) clearTimeout(copyTimeoutRef.current)
+      copyTimeoutRef.current = setTimeout(() => setCopiedField(null), 2000)
+    } catch {}
   }
 
   const bg = accentColor === 'violet' ? 'bg-violet-50 border-violet-200' : 'bg-rose-50 border-rose-200'
@@ -114,7 +122,7 @@ export default function AliasQRBox({ aliasConfig, accentColor = 'rose', amount }
           >
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-rose-800">Escanear para transferir</h3>
-              <button onClick={() => setShowQR(false)} className="p-1 rounded-lg hover:bg-cream-100 text-nude-400">
+              <button onClick={() => setShowQR(false)} title="Cerrar" className="p-1 rounded-lg hover:bg-cream-100 text-nude-400">
                 <X className="w-5 h-5" />
               </button>
             </div>
