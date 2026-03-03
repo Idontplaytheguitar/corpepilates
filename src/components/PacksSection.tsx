@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Check, Clock, Calendar, MessageCircle, X, Copy, CheckCheck, Loader2 } from 'lucide-react'
+import { Check, Clock, Calendar, MessageCircle, X, Loader2 } from 'lucide-react'
+import AliasQRBox from './AliasQRBox'
 import { formatPrice } from '@/data/config'
 import type { PackConfig, SiteConfig } from '@/data/config'
 import { useUser } from '@/context/UserContext'
@@ -23,7 +24,6 @@ export default function PacksSection({ packs, whatsapp, packsEnabled = true, ali
   const [submitting, setSubmitting] = useState(false)
   const [buySuccess, setBuySuccess] = useState(false)
   const [buyError, setBuyError] = useState('')
-  const [copiedField, setCopiedField] = useState<string | null>(null)
 
   if (!packsEnabled || activePacks.length === 0) return null
 
@@ -45,14 +45,6 @@ export default function PacksSection({ packs, whatsapp, packsEnabled = true, ali
     setPaymentMethod(null)
     setBuySuccess(false)
     setBuyError('')
-  }
-
-  const handleCopy = async (text: string, field: string) => {
-    try {
-      await navigator.clipboard.writeText(text)
-      setCopiedField(field)
-      setTimeout(() => setCopiedField(null), 2000)
-    } catch {}
   }
 
   const handleConfirm = async () => {
@@ -254,52 +246,8 @@ export default function PacksSection({ packs, whatsapp, packsEnabled = true, ali
                   </div>
 
                   {paymentMethod === 'alias' && aliasConfig && (aliasConfig.alias || aliasConfig.cbu) && (
-                    <div className="bg-violet-50 border border-violet-200 rounded-xl p-4 mb-6">
-                      <p className="text-sm font-medium text-violet-800 mb-3">Datos para la transferencia:</p>
-                      <div className="space-y-2">
-                        {aliasConfig.alias && (
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <span className="text-xs text-nude-400 block">Alias</span>
-                              <span className="text-sm font-medium text-rose-800">{aliasConfig.alias}</span>
-                            </div>
-                            <button
-                              onClick={() => handleCopy(aliasConfig.alias, 'alias')}
-                              className="p-2 rounded-lg hover:bg-violet-100 text-violet-600 transition-colors"
-                              title="Copiar alias"
-                            >
-                              {copiedField === 'alias' ? <CheckCheck className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                            </button>
-                          </div>
-                        )}
-                        {aliasConfig.cbu && (
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <span className="text-xs text-nude-400 block">CBU</span>
-                              <span className="text-sm font-medium text-rose-800">{aliasConfig.cbu}</span>
-                            </div>
-                            <button
-                              onClick={() => handleCopy(aliasConfig.cbu, 'cbu')}
-                              className="p-2 rounded-lg hover:bg-violet-100 text-violet-600 transition-colors"
-                              title="Copiar CBU"
-                            >
-                              {copiedField === 'cbu' ? <CheckCheck className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                            </button>
-                          </div>
-                        )}
-                        {aliasConfig.banco && (
-                          <div>
-                            <span className="text-xs text-nude-400 block">Banco</span>
-                            <span className="text-sm font-medium text-rose-800">{aliasConfig.banco}</span>
-                          </div>
-                        )}
-                        {aliasConfig.titular && (
-                          <div>
-                            <span className="text-xs text-nude-400 block">Titular</span>
-                            <span className="text-sm font-medium text-rose-800">{aliasConfig.titular}</span>
-                          </div>
-                        )}
-                      </div>
+                    <div className="mb-6">
+                      <AliasQRBox aliasConfig={aliasConfig} accentColor="violet" />
                     </div>
                   )}
 
