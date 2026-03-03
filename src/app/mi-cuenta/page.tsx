@@ -8,6 +8,7 @@ import type { UserPack, ScheduledClass, RecurringSchedule, DateException, PackPu
 import Link from 'next/link'
 import { useUser } from '@/context/UserContext'
 import WeeklyCalendar from '@/components/WeeklyCalendar'
+import AliasQRBox from '@/components/AliasQRBox'
 
 interface SlotInfo {
   time: string
@@ -46,6 +47,7 @@ function MiCuentaContent() {
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [activeTab, setActiveTab] = useState<'actividad' | 'agenda' | 'packs' | 'perfil'>('actividad')
+  const [aliasConfig, setAliasConfig] = useState<{ alias?: string; cbu?: string; banco?: string; titular?: string } | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -63,6 +65,7 @@ function MiCuentaContent() {
       setRecurring(configData.booking?.recurring || [])
       setExceptions(configData.booking?.exceptions || [])
       setBedsCapacity(configData.booking?.bedsCapacity || 4)
+      if (configData.site?.aliasConfig) setAliasConfig(configData.site.aliasConfig)
       setPackPurchases(purchasesData.purchases || [])
       setLoading(false)
 
@@ -339,48 +342,55 @@ function MiCuentaContent() {
                   </div>
                 ) : (
                   upcomingClasses.map(cls => (
-                    <div 
+                    <div
                       key={cls.id}
-                      className="bg-white rounded-xl p-4 flex items-center justify-between"
+                      className="bg-white rounded-xl p-4"
                     >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-sage-100 rounded-xl flex items-center justify-center">
-                          <Calendar className="w-6 h-6 text-sage-600" />
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 bg-sage-100 rounded-xl flex items-center justify-center">
+                            <Calendar className="w-6 h-6 text-sage-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-rose-800">
+                              {new Date(cls.date + 'T12:00:00').toLocaleDateString('es-AR', {
+                                weekday: 'long',
+                                day: 'numeric',
+                                month: 'long'
+                              })}
+                              {(cls as any).paymentStatus === 'pending' && (
+                                <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium ml-2">
+                                  Pago pendiente
+                                </span>
+                              )}
+                              {(cls as any).paymentStatus === 'verified' && (
+                                <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium ml-2">
+                                  ✓ Pagado
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-sm text-nude-500">
+                              {cls.time} - {cls.endTime}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="font-medium text-rose-800">
-                            {new Date(cls.date + 'T12:00:00').toLocaleDateString('es-AR', {
-                              weekday: 'long',
-                              day: 'numeric',
-                              month: 'long'
-                            })}
-                            {(cls as any).paymentStatus === 'pending' && (
-                              <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium ml-2">
-                                Pago pendiente
-                              </span>
-                            )}
-                            {(cls as any).paymentStatus === 'verified' && (
-                              <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium ml-2">
-                                ✓ Pagado
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-sm text-nude-500">
-                            {cls.time} - {cls.endTime}
-                          </p>
-                        </div>
+                        <button
+                          onClick={() => handleCancel(cls.id)}
+                          disabled={cancelling === cls.id}
+                          className="px-4 py-2 text-rose-500 hover:bg-rose-50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+                        >
+                          {cancelling === cls.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            'Cancelar'
+                          )}
+                        </button>
                       </div>
-                      <button
-                        onClick={() => handleCancel(cls.id)}
-                        disabled={cancelling === cls.id}
-                        className="px-4 py-2 text-rose-500 hover:bg-rose-50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-                      >
-                        {cancelling === cls.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          'Cancelar'
-                        )}
-                      </button>
+                      {cls.paymentStatus === 'pending' && cls.paymentMethod === 'alias' && aliasConfig && (aliasConfig.alias || aliasConfig.cbu) && (
+                        <div className="mt-3">
+                          <AliasQRBox aliasConfig={aliasConfig} accentColor="rose" />
+                        </div>
+                      )}
                     </div>
                   ))
                 )}
