@@ -13,11 +13,9 @@ function PaymentRow({ p, onVerified }: { p: any; onVerified: (id: string) => voi
   const [confirmingReservation, setConfirmingReservation] = useState(false)
   const [confirmingPayment, setConfirmingPayment] = useState(false)
   const [error, setError] = useState('')
-  // Pack classes have no payment to verify — only need reservation confirmation
-  const needsPayment = !(p.isPack)
-  const needsConfirm = p.type === 'reservation' || p.isPack
+  const needsConfirm = p.type === 'reservation'
   const [reservationConfirmed, setReservationConfirmed] = useState(p.confirmed || !needsConfirm)
-  const [paymentVerified, setPaymentVerified] = useState(!needsPayment)
+  const [paymentVerified, setPaymentVerified] = useState(false)
 
   const doAction = async (action: 'confirm' | 'verify_payment') => {
     const setLoading = action === 'confirm' ? setConfirmingReservation : setConfirmingPayment
@@ -33,7 +31,6 @@ function PaymentRow({ p, onVerified }: { p: any; onVerified: (id: string) => voi
       if (res.ok) {
         if (action === 'confirm') {
           setReservationConfirmed(true)
-          if (p.isPack) setTimeout(() => onVerified(p.id), 800)
         } else {
           setPaymentVerified(true)
           setTimeout(() => onVerified(p.id), 800)
@@ -49,8 +46,6 @@ function PaymentRow({ p, onVerified }: { p: any; onVerified: (id: string) => voi
     }
   }
 
-  const allDone = reservationConfirmed && paymentVerified
-
   return (
     <div className="bg-white border border-cream-200 rounded-xl p-4 flex items-start justify-between gap-4">
       <div className="flex-1 min-w-0">
@@ -65,7 +60,7 @@ function PaymentRow({ p, onVerified }: { p: any; onVerified: (id: string) => voi
         {error && <p className="text-xs text-red-500 mt-1">{error}</p>}
       </div>
       <div className="flex flex-col gap-1.5 shrink-0">
-        {/* Confirm reservation — for reservations and pack classes */}
+        {/* Confirm reservation — for reservations only */}
         {needsConfirm && (
           reservationConfirmed
             ? <span className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-100 text-blue-700">✓ Reserva confirmada</span>
@@ -77,8 +72,8 @@ function PaymentRow({ p, onVerified }: { p: any; onVerified: (id: string) => voi
                 {confirmingReservation ? <Loader2 className="w-3 h-3 animate-spin" /> : '✓'} Confirmar reserva
               </button>
         )}
-        {/* Verify payment — not for pack classes */}
-        {needsPayment && (
+        {/* Verify payment */}
+        {(
           paymentVerified
             ? <span className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-green-100 text-green-700">✓ Pago verificado</span>
             : <button

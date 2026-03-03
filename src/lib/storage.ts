@@ -355,7 +355,7 @@ export async function getPendingReservations(): Promise<Reservation[]> {
 export async function getPendingScheduledClasses(): Promise<ScheduledClass[]> {
   const classes = await getScheduledClasses()
   return classes.filter(
-    c => c.status !== 'cancelled' && (!c.paymentStatus || c.paymentStatus === 'pending')
+    c => !c.userPackId && c.status !== 'cancelled' && (!c.paymentStatus || c.paymentStatus === 'pending')
   )
 }
 

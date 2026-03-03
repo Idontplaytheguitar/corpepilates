@@ -21,9 +21,9 @@ export async function GET(req: NextRequest) {
     })),
     ...classes.map(c => ({
       id: c.id, type: 'scheduled_class', name: c.customerName, email: c.customerEmail,
-      date: c.date, time: c.time, service: c.userPackId ? 'Clase de pack' : 'Clase suelta',
+      date: c.date, time: c.time, service: 'Clase suelta',
       price: 0, method: c.paymentMethod || 'unknown', createdAt: c.createdAt,
-      isPack: !!c.userPackId, confirmed: c.status === 'scheduled',
+      confirmed: false,
     })),
     ...packPurchases.map(p => ({
       id: p.id, type: 'pack_purchase', name: p.userName, email: p.userEmail,
