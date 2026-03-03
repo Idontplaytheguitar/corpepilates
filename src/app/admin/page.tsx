@@ -642,6 +642,45 @@ export default function AdminPage() {
                 </div>
 
                 <div className="border-t border-cream-200 pt-6 mt-6">
+                  <h3 className="font-display text-lg font-semibold text-rose-800 mb-4">
+                    💳 Datos para transferencias
+                  </h3>
+                  <p className="text-sm text-nude-500 mb-4">
+                    Se muestran a los clientes al comprar un pack o reservar una clase con pago por transferencia.
+                  </p>
+                  <div className="space-y-4">
+                    <FormField
+                      label="Alias"
+                      help="Alias de tu cuenta (ej: corpe.pilates.mp)"
+                      value={site.aliasConfig?.alias || ''}
+                      onChange={v => { setSite({ ...site, aliasConfig: { alias: v, cbu: site.aliasConfig?.cbu || '', banco: site.aliasConfig?.banco || '', titular: site.aliasConfig?.titular || '' } }); markChanged() }}
+                      placeholder="ej: corpe.pilates.mp"
+                    />
+                    <FormField
+                      label="CBU/CVU"
+                      help="Número de CBU o CVU de 22 dígitos"
+                      value={site.aliasConfig?.cbu || ''}
+                      onChange={v => { setSite({ ...site, aliasConfig: { cbu: v, alias: site.aliasConfig?.alias || '', banco: site.aliasConfig?.banco || '', titular: site.aliasConfig?.titular || '' } }); markChanged() }}
+                      placeholder="0000003100012345678901"
+                    />
+                    <FormField
+                      label="Banco"
+                      help="Nombre del banco o billetera (ej: MercadoPago, Brubank)"
+                      value={site.aliasConfig?.banco || ''}
+                      onChange={v => { setSite({ ...site, aliasConfig: { banco: v, alias: site.aliasConfig?.alias || '', cbu: site.aliasConfig?.cbu || '', titular: site.aliasConfig?.titular || '' } }); markChanged() }}
+                      placeholder="ej: MercadoPago"
+                    />
+                    <FormField
+                      label="Titular"
+                      help="Nombre completo del titular de la cuenta"
+                      value={site.aliasConfig?.titular || ''}
+                      onChange={v => { setSite({ ...site, aliasConfig: { titular: v, alias: site.aliasConfig?.alias || '', cbu: site.aliasConfig?.cbu || '', banco: site.aliasConfig?.banco || '' } }); markChanged() }}
+                      placeholder="ej: María García"
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-cream-200 pt-6 mt-6">
                   <h3 className="font-display text-lg font-semibold text-rose-800 mb-4 flex items-center gap-2">
                     <Key className="w-5 h-5" />
                     Seguridad
