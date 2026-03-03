@@ -11,6 +11,7 @@ import type { ServiceConfig, SiteConfig, RecurringSchedule, DateException } from
 import Link from 'next/link'
 import ReglamentoModal from '@/components/ReglamentoModal'
 import { useUser } from '@/context/UserContext'
+import AliasQRBox from '@/components/AliasQRBox'
 
 function validateEmail(email: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
@@ -688,17 +689,8 @@ function ReservarContent() {
                 </div>
 
                 {paymentMethod === 'alias' && aliasConfig && (
-                  <div className="bg-rose-50 rounded-xl p-5 mb-6 text-left border border-rose-200">
-                    <h3 className="font-medium text-rose-800 mb-3">Datos de transferencia</h3>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between"><span className="text-nude-500">Alias</span><span className="font-mono font-medium text-rose-800">{aliasConfig.alias}</span></div>
-                      <div className="flex justify-between"><span className="text-nude-500">CBU/CVU</span><span className="font-mono font-medium text-rose-800 text-xs">{aliasConfig.cbu}</span></div>
-                      <div className="flex justify-between"><span className="text-nude-500">Banco</span><span className="font-medium text-rose-800">{aliasConfig.banco}</span></div>
-                      <div className="flex justify-between"><span className="text-nude-500">Titular</span><span className="font-medium text-rose-800">{aliasConfig.titular}</span></div>
-                      <div className="pt-2 border-t border-rose-200 flex justify-between font-semibold">
-                        <span>Total</span><span className="text-rose-700">{formatPrice(selectedService.price)}</span>
-                      </div>
-                    </div>
+                  <div className="mb-6">
+                    <AliasQRBox aliasConfig={aliasConfig} accentColor="rose" amount={selectedService?.price} />
                   </div>
                 )}
 
