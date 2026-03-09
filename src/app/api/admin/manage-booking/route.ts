@@ -73,7 +73,21 @@ export async function POST(req: NextRequest) {
     const scheduledClass = classes[idx]
 
     if (action === 'cancel') {
-      classes[idx] = { ...scheduledClass, status: 'cancelled' }
+      classes[idx] = {
+        ...scheduledClass,
+        status: 'cancelled',
+        cancelledAt: Date.now(),
+        cancelledBy: 'admin',
+        history: [
+          ...(scheduledClass.history || []),
+          {
+            action: 'cancelled' as const,
+            by: 'admin' as const,
+            at: Date.now(),
+            details: `Cancelada por admin. Clase del ${scheduledClass.date} a las ${scheduledClass.time}`,
+          }
+        ]
+      }
       await saveScheduledClass(classes[idx])
       if (scheduledClass.userPackId) {
         const pack = await getUserPackById(scheduledClass.userPackId)
@@ -96,7 +110,21 @@ export async function POST(req: NextRequest) {
     if (action === 'reschedule') {
       const oldDate = scheduledClass.date
       const oldTime = scheduledClass.time
-      classes[idx] = { ...scheduledClass, date: newDate, time: newTime }
+      classes[idx] = {
+        ...scheduledClass,
+        date: newDate,
+        time: newTime,
+        rescheduledFrom: { date: oldDate, time: oldTime },
+        history: [
+          ...(scheduledClass.history || []),
+          {
+            action: 'rescheduled' as const,
+            by: 'admin' as const,
+            at: Date.now(),
+            details: `Reprogramada por admin de ${oldDate} ${oldTime} a ${newDate} ${newTime}`,
+          }
+        ]
+      }
       await saveScheduledClass(classes[idx])
       try {
         await sendRescheduleEmail(

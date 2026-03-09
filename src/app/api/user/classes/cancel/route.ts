@@ -59,6 +59,17 @@ export async function POST(request: NextRequest) {
     }
     
     scheduledClass.status = 'cancelled'
+    scheduledClass.cancelledAt = Date.now()
+    scheduledClass.cancelledBy = 'user'
+    scheduledClass.history = [
+      ...(scheduledClass.history || []),
+      {
+        action: 'cancelled' as const,
+        by: 'user' as const,
+        at: Date.now(),
+        details: `Cancelada por el usuario. Clase del ${scheduledClass.date} a las ${scheduledClass.time}`,
+      }
+    ]
     await saveScheduledClass(scheduledClass)
     
     if (scheduledClass.userPackId) {

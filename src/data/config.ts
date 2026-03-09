@@ -160,6 +160,13 @@ export interface UserPack {
   status: 'active' | 'expired' | 'exhausted'
 }
 
+export interface ClassHistoryEntry {
+  action: 'created' | 'cancelled' | 'rescheduled'
+  by: 'user' | 'admin' | 'system'
+  at: number
+  details?: string
+}
+
 export interface ScheduledClass {
   id: string
   oderId?: string
@@ -176,6 +183,10 @@ export interface ScheduledClass {
   paymentMethod?: 'alias' | 'efectivo' | 'mercadopago'
   customerDireccion?: string
   customerObraSocial?: string
+  cancelledAt?: number
+  cancelledBy?: 'user' | 'admin'
+  rescheduledFrom?: { date: string; time: string }
+  history?: ClassHistoryEntry[]
   createdAt: number
 }
 
