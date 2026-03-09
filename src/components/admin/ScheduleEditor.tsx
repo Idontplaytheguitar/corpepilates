@@ -1,6 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { Plus, X, Calendar, Clock, Copy, Trash2, ChevronLeft, ChevronRight } from 'lucide-react'
 import type { RecurringSchedule, DateException, TimeSlot, Reservation } from '@/data/config'
 import { DAYS_OF_WEEK } from '@/data/config'
@@ -17,19 +18,37 @@ interface CustomDatePickerProps {
 function CustomDatePicker({ value, onChange, minDate }: CustomDatePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(() => value ? new Date(value + 'T12:00:00') : new Date())
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0, width: 0 })
   const containerRef = useRef<HTMLDivElement>(null)
+  const popupRef = useRef<HTMLDivElement>(null)
+
+  const updatePos = useCallback(() => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect()
+      setDropdownPos({ top: rect.bottom + 8, left: rect.left, width: rect.width })
+    }
+  }, [])
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current && !containerRef.current.contains(e.target as Node) &&
+        popupRef.current && !popupRef.current.contains(e.target as Node)
+      ) {
         setIsOpen(false)
       }
     }
     if (isOpen) {
       document.addEventListener('mousedown', handleClickOutside)
+      document.addEventListener('scroll', updatePos, true)
+      window.addEventListener('resize', updatePos)
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [isOpen])
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside)
+      document.removeEventListener('scroll', updatePos, true)
+      window.removeEventListener('resize', updatePos)
+    }
+  }, [isOpen, updatePos])
 
   const getDaysInMonth = () => {
     const year = currentMonth.getFullYear()
@@ -74,7 +93,7 @@ function CustomDatePicker({ value, onChange, minDate }: CustomDatePickerProps) {
     <div ref={containerRef} className="relative flex-1">
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => { updatePos(); setIsOpen(!isOpen) }}
         className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 transition-all duration-200 text-left
                    ${isOpen ? 'border-rose-500 ring-4 ring-rose-100' : 'border-cream-200 hover:border-rose-300'}
                    bg-white hover:bg-rose-50/50`}
@@ -88,8 +107,12 @@ function CustomDatePicker({ value, onChange, minDate }: CustomDatePickerProps) {
         </span>
       </button>
 
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-cream-200 p-4 z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+      {isOpen && typeof window !== 'undefined' && createPortal(
+        <div
+          ref={popupRef}
+          style={{ position: 'fixed', top: dropdownPos.top, left: dropdownPos.left, width: dropdownPos.width, zIndex: 9999 }}
+          className="bg-white rounded-xl shadow-xl border border-cream-200 p-4 animate-in fade-in slide-in-from-top-2 duration-200"
+        >
           <div className="flex items-center justify-between mb-4">
             <button
               type="button"
@@ -146,7 +169,8 @@ function CustomDatePicker({ value, onChange, minDate }: CustomDatePickerProps) {
               )
             })}
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   )
