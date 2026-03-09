@@ -217,6 +217,7 @@ export default function AdminPage() {
   const [heroOpen, setHeroOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [footerOpen, setFooterOpen] = useState(false)
+  const [historyClass, setHistoryClass] = useState<ScheduledClass | null>(null)
 
   const closeCalModal = () => {
     setCalEntry(null)
@@ -2023,6 +2024,41 @@ export default function AdminPage() {
                     </div>
                   )
                 })()}
+
+                <div className="mt-6 border-t border-cream-200 pt-4">
+                  <h3 className="font-semibold text-rose-800 mb-3">Historial de Cambios</h3>
+                  {(() => {
+                    const allEvents = scheduledClasses
+                      .flatMap(cls => (cls.history || []).map(h => ({ ...h, cls })))
+                      .filter(e => e.action !== 'created')
+                      .sort((a, b) => b.at - a.at)
+                      .slice(0, 30)
+
+                    if (allEvents.length === 0) return <p className="text-sm text-nude-400 italic">Sin cambios recientes</p>
+
+                    return (
+                      <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                        {allEvents.map((event, i) => (
+                          <div
+                            key={i}
+                            onClick={() => setHistoryClass(event.cls)}
+                            className="flex items-start gap-3 p-3 bg-white rounded-lg border border-cream-200 hover:border-rose-200 cursor-pointer transition-colors"
+                          >
+                            <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                              event.action === 'cancelled' ? 'bg-red-400' : 'bg-blue-400'
+                            }`} />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm text-nude-700 truncate">{event.details}</p>
+                              <p className="text-xs text-nude-400">
+                                {new Date(event.at).toLocaleString('es-AR')} — {event.cls.customerName}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })()}
+                </div>
               </div>
             )}
 
@@ -2121,6 +2157,59 @@ export default function AdminPage() {
               </div>
             )}
             </div>
+            {historyClass && (
+              <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setHistoryClass(null)}>
+                <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+                  <div className="p-4 border-b border-cream-200 flex items-center justify-between">
+                    <h3 className="font-semibold text-rose-800">Historial de Clase</h3>
+                    <button onClick={() => setHistoryClass(null)} className="p-1 hover:bg-cream-100 rounded-lg">
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <div className="p-4 space-y-3">
+                    <div className="text-sm text-nude-600">
+                      <p><strong>{historyClass.customerName}</strong></p>
+                      <p>{historyClass.date} — {historyClass.time}</p>
+                      <p>Estado: <span className={
+                        historyClass.status === 'cancelled' ? 'text-red-500 font-medium' :
+                        historyClass.status === 'scheduled' ? 'text-green-600 font-medium' : 'text-nude-500'
+                      }>{
+                        historyClass.status === 'cancelled' ? 'Cancelada' :
+                        historyClass.status === 'scheduled' ? 'Programada' :
+                        historyClass.status === 'completed' ? 'Completada' :
+                        historyClass.status === 'absent' ? 'Ausente' : historyClass.status
+                      }</span></p>
+                      {historyClass.rescheduledFrom && (
+                        <p className="text-xs text-blue-500">Originalmente: {historyClass.rescheduledFrom.date} {historyClass.rescheduledFrom.time}</p>
+                      )}
+                    </div>
+                    <div className="border-t border-cream-200 pt-3">
+                      <h4 className="text-xs font-bold text-nude-500 uppercase mb-2">Línea de tiempo</h4>
+                      {(!historyClass.history || historyClass.history.length === 0) ? (
+                        <p className="text-sm text-nude-400 italic">Sin historial registrado</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {historyClass.history.map((entry, i) => (
+                            <div key={i} className="flex gap-3 text-sm">
+                              <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+                                entry.action === 'cancelled' ? 'bg-red-400' :
+                                entry.action === 'rescheduled' ? 'bg-blue-400' : 'bg-green-400'
+                              }`} />
+                              <div>
+                                <p className="text-nude-700">{entry.details || entry.action}</p>
+                                <p className="text-xs text-nude-400">
+                                  {new Date(entry.at).toLocaleString('es-AR')} — {entry.by === 'admin' ? 'Admin' : 'Usuario'}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
             {showPreview && (
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPreview(false)}>
                 <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg flex flex-col" style={{ height: '85vh' }} onClick={e => e.stopPropagation()}>
