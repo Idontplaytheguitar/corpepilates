@@ -43,6 +43,11 @@ function MiCuentaContent() {
   const [selectedTime, setSelectedTime] = useState<string>('')
   const [scheduling, setScheduling] = useState(false)
   const [cancelling, setCancelling] = useState<string | null>(null)
+  const [rescheduling, setRescheduling] = useState<string | null>(null)
+  const [rescheduleSlots, setRescheduleSlots] = useState<string[]>([])
+  const [rescheduleDate, setRescheduleDate] = useState('')
+  const [rescheduleTime, setRescheduleTime] = useState('')
+  const [rescheduleLoading, setRescheduleLoading] = useState(false)
   const [scheduleModal, setScheduleModal] = useState<{ date: string; time: string } | null>(null)
   const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
   const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -220,6 +225,54 @@ function MiCuentaContent() {
     setCancelling(null)
   }
 
+  const handleStartReschedule = (classId: string) => {
+    setRescheduling(classId)
+    setRescheduleDate('')
+    setRescheduleTime('')
+    setRescheduleSlots([])
+    setMessage(null)
+  }
+
+  const handleRescheduleDateChange = async (date: string) => {
+    setRescheduleDate(date)
+    setRescheduleTime('')
+    setRescheduleSlots([])
+    try {
+      const res = await fetch(`/api/booking/slots?date=${date}`)
+      const data = await res.json()
+      setRescheduleSlots(data.slots || [])
+    } catch {
+      setRescheduleSlots([])
+    }
+  }
+
+  const handleConfirmReschedule = async () => {
+    if (!rescheduling || !rescheduleDate || !rescheduleTime) return
+    setRescheduleLoading(true)
+    setMessage(null)
+    try {
+      const res = await fetch('/api/user/classes/reschedule', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ classId: rescheduling, newDate: rescheduleDate, newTime: rescheduleTime })
+      })
+      const data = await res.json()
+      if (data.success) {
+        setMessage({ type: 'success', text: data.message || 'Clase reprogramada' })
+        setRescheduling(null)
+        const classesRes = await fetch('/api/user/classes')
+        const classesData = await classesRes.json()
+        setUpcomingClasses(classesData.upcoming || [])
+        setHistoryClasses(classesData.history || [])
+      } else {
+        setMessage({ type: 'error', text: data.error || 'Error al reprogramar' })
+      }
+    } catch {
+      setMessage({ type: 'error', text: 'Error de conexión' })
+    }
+    setRescheduleLoading(false)
+  }
+
   if (userLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-rose-50 to-cream-100 pt-24 pb-12 px-4 flex items-center justify-center">
@@ -374,21 +427,77 @@ function MiCuentaContent() {
                             </p>
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleCancel(cls.id)}
-                          disabled={cancelling === cls.id}
-                          className="px-4 py-2 text-rose-500 hover:bg-rose-50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
-                        >
-                          {cancelling === cls.id ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            'Cancelar'
-                          )}
-                        </button>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <button
+                            onClick={() => handleStartReschedule(cls.id)}
+                            disabled={cancelling === cls.id || rescheduling === cls.id}
+                            className="px-3 py-1.5 text-sage-700 hover:bg-sage-50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 border border-sage-200"
+                          >
+                            Reprogramar
+                          </button>
+                          <button
+                            onClick={() => handleCancel(cls.id)}
+                            disabled={cancelling === cls.id}
+                            className="px-3 py-1.5 text-rose-500 hover:bg-rose-50 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 border border-rose-200"
+                          >
+                            {cancelling === cls.id ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              'Cancelar'
+                            )}
+                          </button>
+                        </div>
                       </div>
                       {cls.paymentStatus === 'pending' && cls.paymentMethod === 'alias' && aliasConfig && (aliasConfig.alias || aliasConfig.cbu) && (
                         <div className="mt-3">
                           <AliasQRBox aliasConfig={aliasConfig} accentColor="rose" />
+                        </div>
+                      )}
+                      {rescheduling === cls.id && (
+                        <div className="mt-3 p-4 bg-sage-50 rounded-xl border border-sage-200 space-y-3">
+                          <p className="text-sm font-medium text-sage-800">Elegí nueva fecha y horario:</p>
+                          <input
+                            type="date"
+                            value={rescheduleDate}
+                            min={new Date(Date.now() + 86400000).toISOString().split('T')[0]}
+                            onChange={(e) => handleRescheduleDateChange(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg border border-sage-200 focus:border-sage-400 focus:ring-2 focus:ring-sage-100 outline-none text-sm"
+                          />
+                          {rescheduleDate && rescheduleSlots.length > 0 && (
+                            <div className="flex flex-wrap gap-2">
+                              {rescheduleSlots.map(slot => (
+                                <button
+                                  key={slot}
+                                  onClick={() => setRescheduleTime(slot)}
+                                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                                    rescheduleTime === slot
+                                      ? 'bg-sage-600 text-white'
+                                      : 'bg-white border border-sage-200 text-sage-700 hover:bg-sage-100'
+                                  }`}
+                                >
+                                  {slot}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                          {rescheduleDate && rescheduleSlots.length === 0 && (
+                            <p className="text-sm text-nude-500">No hay horarios disponibles este día</p>
+                          )}
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setRescheduling(null)}
+                              className="flex-1 py-2 border border-sage-200 text-sage-600 rounded-lg text-sm font-medium hover:bg-sage-50"
+                            >
+                              Cancelar
+                            </button>
+                            <button
+                              onClick={handleConfirmReschedule}
+                              disabled={!rescheduleDate || !rescheduleTime || rescheduleLoading}
+                              className="flex-1 py-2 bg-sage-600 text-white rounded-lg text-sm font-medium hover:bg-sage-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              {rescheduleLoading ? 'Reprogramando...' : 'Confirmar'}
+                            </button>
+                          </div>
                         </div>
                       )}
                     </div>
