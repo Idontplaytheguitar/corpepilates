@@ -2,16 +2,17 @@
 
 import { useState } from 'react'
 import { Heart, Instagram, MessageCircle, Mail } from 'lucide-react'
-import type { SiteConfig } from '@/data/config'
+import type { SiteConfig, FooterContent } from '@/data/config'
 import dynamic from 'next/dynamic'
 
 const ReglamentoModal = dynamic(() => import('./ReglamentoModal'), { ssr: false })
 
 interface FooterProps {
   config: SiteConfig
+  footerContent?: FooterContent
 }
 
-export default function Footer({ config }: FooterProps) {
+export default function Footer({ config, footerContent }: FooterProps) {
   const [showReglamento, setShowReglamento] = useState(false)
 
   const whatsappDisplay = config.whatsapp.replace(/(\d{2})(\d{2})(\d{4})(\d{4})/, '+$1 $2 $3-$4')
@@ -24,7 +25,7 @@ export default function Footer({ config }: FooterProps) {
           <div>
             <h3 className="font-display text-3xl font-semibold mb-4">{config.siteName}</h3>
             <p className="text-rose-200 leading-relaxed">
-              {config.tagline}. Transformá tu cuerpo con clases personalizadas de Pilates Reformer.
+              {config.tagline}. {footerContent?.description || 'Transformá tu cuerpo con clases personalizadas de Pilates Reformer.'}
             </p>
             <div className="flex gap-4 mt-6">
               <SocialLink href={config.instagram} icon={<Instagram className="w-5 h-5" />} />

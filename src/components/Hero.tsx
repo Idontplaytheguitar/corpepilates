@@ -2,14 +2,31 @@
 
 import { useState, useEffect } from 'react'
 import { Activity, Heart, Zap, ArrowRight } from 'lucide-react'
+import type { HeroContent } from '@/data/config'
+
+const defaultHero: HeroContent = {
+  eyebrow: 'Pilates Reformer para todos',
+  description: 'Fortalecé tu core, cuidá tu columna y transformá tu cuerpo. Clases personalizadas con equipos profesionales Reformer.',
+  ctaPrimary: 'Ver Planes',
+  ctaSecondary: 'Reservar Clase',
+  featurePills: ['Cuidá tu columna', 'Fortalecé tu core', 'Ganá fuerza y flexibilidad'],
+}
+
+const pillIcons = [
+  <Heart key="heart" className="w-3.5 h-3.5" />,
+  <Activity key="activity" className="w-3.5 h-3.5" />,
+  <Zap key="zap" className="w-3.5 h-3.5" />,
+]
 
 interface HeroProps {
   siteName?: string
   bookingEnabled?: boolean
   mercadopagoEnabled?: boolean
+  content?: HeroContent
 }
 
-export default function Hero({ siteName = 'Corpe Pilates', bookingEnabled = true, mercadopagoEnabled = true }: HeroProps) {
+export default function Hero({ siteName = 'Corpe Pilates', bookingEnabled = true, mercadopagoEnabled = true, content }: HeroProps) {
+  const hero = { ...defaultHero, ...content }
   const showReservationButton = bookingEnabled
 
   const [scrolled, setScrolled] = useState(false)
@@ -46,7 +63,7 @@ export default function Hero({ siteName = 'Corpe Pilates', bookingEnabled = true
           {/* Eyebrow badge - more minimal */}
           <div className="inline-flex items-center gap-3 mb-8">
             <div className="h-px w-8 bg-rose-400" />
-            <span className="text-xs text-rose-600 font-semibold tracking-[0.2em] uppercase">Pilates Reformer para todos</span>
+            <span className="text-xs text-rose-600 font-semibold tracking-[0.2em] uppercase">{hero.eyebrow}</span>
             <div className="h-px w-8 bg-rose-400" />
           </div>
 
@@ -68,9 +85,7 @@ export default function Hero({ siteName = 'Corpe Pilates', bookingEnabled = true
           </div>
 
           <p className="text-lg sm:text-xl text-nude-600 max-w-xl mx-auto mb-10 leading-relaxed font-light">
-            Fortalecé tu core, cuidá tu columna y transformá tu cuerpo.{' '}
-            <span className="text-rose-700 font-medium">Clases personalizadas</span>{' '}
-            con equipos profesionales Reformer.
+            {hero.description}
           </p>
 
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-16">
@@ -78,7 +93,7 @@ export default function Hero({ siteName = 'Corpe Pilates', bookingEnabled = true
               href="#servicios"
               className="group inline-flex items-center gap-2 px-8 py-4 bg-rose-800 text-white rounded-xl font-semibold hover:bg-rose-700 transition-all hover:shadow-lg hover:shadow-rose-200 hover:-translate-y-0.5"
             >
-              Ver Planes
+              {hero.ctaPrimary}
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </a>
             {showReservationButton && (
@@ -86,21 +101,17 @@ export default function Hero({ siteName = 'Corpe Pilates', bookingEnabled = true
                 href="/reservar"
                 className="inline-flex items-center gap-2 px-8 py-4 border border-rose-300 text-rose-700 rounded-xl font-semibold hover:bg-rose-50 hover:border-rose-400 transition-all hover:-translate-y-0.5"
               >
-                Reservar Clase
+                {hero.ctaSecondary}
               </a>
             )}
           </div>
 
           {/* Feature pills - more refined */}
           <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
-            {[
-              { icon: <Heart className="w-3.5 h-3.5" />, label: 'Cuidá tu columna' },
-              { icon: <Activity className="w-3.5 h-3.5" />, label: 'Fortalecé tu core' },
-              { icon: <Zap className="w-3.5 h-3.5" />, label: 'Ganá fuerza y flexibilidad' },
-            ].map(({ icon, label }) => (
+            {hero.featurePills.map((label, i) => (
               <div key={label} className="flex items-center gap-2 text-rose-600">
                 <div className="w-6 h-6 rounded-full bg-rose-100 flex items-center justify-center text-rose-500">
-                  {icon}
+                  {pillIcons[i % pillIcons.length]}
                 </div>
                 <span className="text-nude-600 font-medium">{label}</span>
               </div>

@@ -1,6 +1,41 @@
 import { Heart, Activity, Target, Award } from 'lucide-react'
+import type { AboutContent } from '@/data/config'
 
-export default function AboutSection() {
+const iconMap: Record<string, React.ReactNode> = {
+  Heart: <Heart className="w-5 h-5" />,
+  Activity: <Activity className="w-5 h-5" />,
+  Target: <Target className="w-5 h-5" />,
+  Award: <Award className="w-5 h-5" />,
+}
+
+const defaultAbout: AboutContent = {
+  eyebrow: 'Sobre Nosotros',
+  heading: 'Pilates Reformer',
+  description: 'El Pilates Reformer es una modalidad que utiliza una cama especial con resortes que regulan la tensión, simulando el levantamiento de peso de forma controlada y segura para tus articulaciones.\n\nLa idea principal es trabajar el músculo profundo del abdomen (el famoso core) para cuidar la columna vertebral y mejorar la postura. Además, trabajamos piernas, brazos y espalda para generar más fuerza y tonificación muscular.\n\nCon clases personalizadas y atención al detalle, te acompañamos en tu transformación física respetando los tiempos de tu cuerpo.',
+  features: [
+    { icon: 'Heart', title: 'Cuidá tu Columna', description: 'Protección y fortalecimiento' },
+    { icon: 'Activity', title: 'Core Fuerte', description: 'Músculo profundo del abdomen' },
+    { icon: 'Target', title: 'Postura Correcta', description: 'Alineación corporal' },
+    { icon: 'Award', title: 'Instructora Certificada', description: 'Clases personalizadas' },
+  ],
+  images: [
+    'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&h=600&fit=crop',
+    'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&h=600&fit=crop',
+  ],
+}
+
+interface AboutSectionProps {
+  content?: AboutContent
+}
+
+export default function AboutSection({ content }: AboutSectionProps) {
+  const about = { ...defaultAbout, ...content }
+  const images = about.images.length >= 4 ? about.images : defaultAbout.images
+  const features = about.features.length > 0 ? about.features : defaultAbout.features
+  const paragraphs = about.description.split('\n\n').filter(Boolean)
+
   return (
     <section id="sobre-mi" className="py-24 bg-cream-50/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -8,19 +43,19 @@ export default function AboutSection() {
           <div className="relative">
             <div className="absolute -top-4 -left-4 w-72 h-72 bg-rose-200 rounded-full blur-3xl opacity-30" />
             <div className="absolute -bottom-4 -right-4 w-64 h-64 bg-nude-200 rounded-full blur-3xl opacity-30" />
-            
+
             <div className="relative grid grid-cols-2 gap-4">
               <div className="space-y-4">
                 <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-xl">
                   <img
-                    src="https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&h=600&fit=crop"
+                    src={images[0]}
                     alt="Pilates Reformer"
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="aspect-square rounded-2xl overflow-hidden shadow-xl">
                   <img
-                    src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&h=400&fit=crop"
+                    src={images[1]}
                     alt="Ejercicio de core"
                     className="w-full h-full object-cover"
                   />
@@ -29,14 +64,14 @@ export default function AboutSection() {
               <div className="pt-8 space-y-4">
                 <div className="aspect-square rounded-2xl overflow-hidden shadow-xl">
                   <img
-                    src="https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=400&h=400&fit=crop"
+                    src={images[2]}
                     alt="Clase de pilates"
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <div className="aspect-[3/4] rounded-2xl overflow-hidden shadow-xl">
                   <img
-                    src="https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&h=600&fit=crop"
+                    src={images[3]}
                     alt="Flexibilidad y fuerza"
                     className="w-full h-full object-cover"
                   />
@@ -47,50 +82,27 @@ export default function AboutSection() {
 
           <div>
             <div className="section-eyebrow text-rose-500 mb-3">
-              Sobre Nosotros
+              {about.eyebrow}
             </div>
             <h2 className="font-display text-4xl sm:text-5xl font-semibold text-rose-800 mt-2 mb-6">
-              Pilates Reformer
+              {about.heading}
             </h2>
-            
+
             <div className="space-y-4 text-nude-600 leading-relaxed">
-              <p>
-                El Pilates Reformer es una modalidad que utiliza una cama especial con resortes 
-                que regulan la tensión, simulando el levantamiento de peso de forma controlada 
-                y segura para tus articulaciones.
-              </p>
-              <p>
-                La idea principal es trabajar el músculo profundo del abdomen (el famoso core) 
-                para cuidar la columna vertebral y mejorar la postura. Además, trabajamos 
-                piernas, brazos y espalda para generar más fuerza y tonificación muscular.
-              </p>
-              <p>
-                Con clases personalizadas y atención al detalle, te acompañamos en tu 
-                transformación física respetando los tiempos de tu cuerpo.
-              </p>
+              {paragraphs.map((p, i) => (
+                <p key={i}>{p}</p>
+              ))}
             </div>
 
             <div className="grid grid-cols-2 gap-4 mt-8">
-              <FeatureCard
-                icon={<Heart className="w-5 h-5" />}
-                title="Cuidá tu Columna"
-                description="Protección y fortalecimiento"
-              />
-              <FeatureCard
-                icon={<Activity className="w-5 h-5" />}
-                title="Core Fuerte"
-                description="Músculo profundo del abdomen"
-              />
-              <FeatureCard
-                icon={<Target className="w-5 h-5" />}
-                title="Postura Correcta"
-                description="Alineación corporal"
-              />
-              <FeatureCard
-                icon={<Award className="w-5 h-5" />}
-                title="Instructora Certificada"
-                description="Clases personalizadas"
-              />
+              {features.map((feature, i) => (
+                <FeatureCard
+                  key={i}
+                  icon={iconMap[feature.icon] || <Heart className="w-5 h-5" />}
+                  title={feature.title}
+                  description={feature.description}
+                />
+              ))}
             </div>
           </div>
         </div>

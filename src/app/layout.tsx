@@ -36,7 +36,7 @@ export default async function RootLayout({
             <main className="min-h-screen">
               {children}
             </main>
-            <Footer config={config.site} />
+            <Footer config={config.site} footerContent={config.site.footer} />
           </CartProvider>
         </UserProvider>
       </body>

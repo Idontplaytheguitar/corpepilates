@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Save, Plus, Trash2, Eye, EyeOff, Lock, Check, AlertCircle, Loader2, Image as ImageIcon, Key, Mail, Pause, Play, Calendar, Clock, X, LogOut } from 'lucide-react'
-import type { FullConfig, ProductConfig, ServiceConfig, SiteConfig, BookingConfig, RecurringSchedule, DateException, Reservation, PackConfig, ScheduledClass } from '@/data/config'
+import { Save, Plus, Trash2, Eye, EyeOff, Lock, Check, AlertCircle, Loader2, Image as ImageIcon, Key, Mail, Pause, Play, Calendar, Clock, X, LogOut, ChevronDown, ChevronRight } from 'lucide-react'
+import ImageUploader from '@/components/admin/ImageUploader'
+import type { FullConfig, ProductConfig, ServiceConfig, SiteConfig, BookingConfig, RecurringSchedule, DateException, Reservation, PackConfig, ScheduledClass, HeroContent, AboutContent, AboutFeature, FooterContent } from '@/data/config'
 import { defaultConfig, formatPrice } from '@/data/config'
 import { DEFAULT_REGLAMENTO } from '@/data/reglamento'
 import ScheduleEditor from '@/components/admin/ScheduleEditor'
@@ -213,6 +214,9 @@ export default function AdminPage() {
   const [reglamentoText, setReglamentoText] = useState('')
   const [showPreview, setShowPreview] = useState(false)
   const [previewKey, setPreviewKey] = useState(0)
+  const [heroOpen, setHeroOpen] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
+  const [footerOpen, setFooterOpen] = useState(false)
 
   const closeCalModal = () => {
     setCalEntry(null)
@@ -937,6 +941,266 @@ export default function AdminPage() {
                           <AlertCircle className="w-4 h-4" /> {passwordError}
                         </p>
                       )}
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Contenido del Hero ── */}
+                <div className="border-t border-cream-200 pt-6 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setHeroOpen(!heroOpen)}
+                    className="w-full flex items-center justify-between text-left"
+                  >
+                    <h3 className="font-display text-lg font-semibold text-rose-800">
+                      Contenido del Hero
+                    </h3>
+                    {heroOpen ? <ChevronDown className="w-5 h-5 text-nude-400" /> : <ChevronRight className="w-5 h-5 text-nude-400" />}
+                  </button>
+                  {heroOpen && (
+                    <div className="mt-4 space-y-4">
+                      <FormField
+                        label="Eyebrow (texto superior)"
+                        help="Texto corto que aparece arriba del nombre"
+                        value={site.hero?.eyebrow || defaultConfig.site.hero!.eyebrow}
+                        onChange={v => { setSite({ ...site, hero: { ...defaultConfig.site.hero!, ...site.hero, eyebrow: v } }); markChanged() }}
+                        placeholder="Ej: Pilates Reformer para todos"
+                      />
+                      <div>
+                        <label className="block text-sm font-medium text-rose-700 mb-1">Descripcion del hero</label>
+                        <p className="text-xs text-nude-400 mb-2">El texto principal debajo del nombre</p>
+                        <textarea
+                          value={site.hero?.description || defaultConfig.site.hero!.description}
+                          onChange={e => { setSite({ ...site, hero: { ...defaultConfig.site.hero!, ...site.hero, description: e.target.value } }); markChanged() }}
+                          rows={3}
+                          className="w-full px-4 py-3 rounded-xl border border-cream-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none resize-none"
+                          placeholder="Fortalecé tu core, cuidá tu columna..."
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          label="Texto boton primario"
+                          value={site.hero?.ctaPrimary || defaultConfig.site.hero!.ctaPrimary}
+                          onChange={v => { setSite({ ...site, hero: { ...defaultConfig.site.hero!, ...site.hero, ctaPrimary: v } }); markChanged() }}
+                          placeholder="Ver Planes"
+                        />
+                        <FormField
+                          label="Texto boton secundario"
+                          value={site.hero?.ctaSecondary || defaultConfig.site.hero!.ctaSecondary}
+                          onChange={v => { setSite({ ...site, hero: { ...defaultConfig.site.hero!, ...site.hero, ctaSecondary: v } }); markChanged() }}
+                          placeholder="Reservar Clase"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-rose-700 mb-1">Feature pills</label>
+                        <p className="text-xs text-nude-400 mb-2">Etiquetas que aparecen debajo de los botones</p>
+                        <div className="space-y-2">
+                          {(site.hero?.featurePills || defaultConfig.site.hero!.featurePills).map((pill, i) => (
+                            <div key={i} className="flex items-center gap-2">
+                              <input
+                                type="text"
+                                value={pill}
+                                onChange={e => {
+                                  const pills = [...(site.hero?.featurePills || defaultConfig.site.hero!.featurePills)]
+                                  pills[i] = e.target.value
+                                  setSite({ ...site, hero: { ...defaultConfig.site.hero!, ...site.hero, featurePills: pills } })
+                                  markChanged()
+                                }}
+                                className="flex-1 px-3 py-2 rounded-lg border border-cream-200 focus:border-rose-400 outline-none text-sm"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const pills = [...(site.hero?.featurePills || defaultConfig.site.hero!.featurePills)]
+                                  pills.splice(i, 1)
+                                  setSite({ ...site, hero: { ...defaultConfig.site.hero!, ...site.hero, featurePills: pills } })
+                                  markChanged()
+                                }}
+                                className="p-1.5 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const pills = [...(site.hero?.featurePills || defaultConfig.site.hero!.featurePills), '']
+                              setSite({ ...site, hero: { ...defaultConfig.site.hero!, ...site.hero, featurePills: pills } })
+                              markChanged()
+                            }}
+                            className="flex items-center gap-1 text-sm text-rose-600 hover:text-rose-700 font-medium"
+                          >
+                            <Plus className="w-4 h-4" /> Agregar pill
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Contenido de Sobre Nosotros ── */}
+                <div className="border-t border-cream-200 pt-6 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setAboutOpen(!aboutOpen)}
+                    className="w-full flex items-center justify-between text-left"
+                  >
+                    <h3 className="font-display text-lg font-semibold text-rose-800">
+                      Contenido de Sobre Nosotros
+                    </h3>
+                    {aboutOpen ? <ChevronDown className="w-5 h-5 text-nude-400" /> : <ChevronRight className="w-5 h-5 text-nude-400" />}
+                  </button>
+                  {aboutOpen && (
+                    <div className="mt-4 space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          label="Eyebrow"
+                          value={site.about?.eyebrow || defaultConfig.site.about!.eyebrow}
+                          onChange={v => { setSite({ ...site, about: { ...defaultConfig.site.about!, ...site.about, eyebrow: v } }); markChanged() }}
+                          placeholder="Sobre Nosotros"
+                        />
+                        <FormField
+                          label="Titulo"
+                          value={site.about?.heading || defaultConfig.site.about!.heading}
+                          onChange={v => { setSite({ ...site, about: { ...defaultConfig.site.about!, ...site.about, heading: v } }); markChanged() }}
+                          placeholder="Pilates Reformer"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-rose-700 mb-1">Descripcion</label>
+                        <p className="text-xs text-nude-400 mb-2">Separa los parrafos con una linea vacia</p>
+                        <textarea
+                          value={site.about?.description || defaultConfig.site.about!.description}
+                          onChange={e => { setSite({ ...site, about: { ...defaultConfig.site.about!, ...site.about, description: e.target.value } }); markChanged() }}
+                          rows={6}
+                          className="w-full px-4 py-3 rounded-xl border border-cream-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none resize-none"
+                        />
+                      </div>
+
+                      {/* Features */}
+                      <div>
+                        <label className="block text-sm font-medium text-rose-700 mb-2">Tarjetas de features</label>
+                        <div className="space-y-3">
+                          {(site.about?.features || defaultConfig.site.about!.features).map((feat, i) => (
+                            <div key={i} className="p-3 bg-cream-50 rounded-xl border border-cream-200 space-y-2">
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={feat.icon}
+                                  onChange={e => {
+                                    const features = [...(site.about?.features || defaultConfig.site.about!.features)]
+                                    features[i] = { ...features[i], icon: e.target.value }
+                                    setSite({ ...site, about: { ...defaultConfig.site.about!, ...site.about, features } })
+                                    markChanged()
+                                  }}
+                                  className="px-2 py-1.5 rounded-lg border border-cream-200 text-sm bg-white"
+                                >
+                                  <option value="Heart">Heart</option>
+                                  <option value="Activity">Activity</option>
+                                  <option value="Target">Target</option>
+                                  <option value="Award">Award</option>
+                                </select>
+                                <input
+                                  type="text"
+                                  value={feat.title}
+                                  onChange={e => {
+                                    const features = [...(site.about?.features || defaultConfig.site.about!.features)]
+                                    features[i] = { ...features[i], title: e.target.value }
+                                    setSite({ ...site, about: { ...defaultConfig.site.about!, ...site.about, features } })
+                                    markChanged()
+                                  }}
+                                  placeholder="Titulo"
+                                  className="flex-1 px-3 py-1.5 rounded-lg border border-cream-200 text-sm"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const features = [...(site.about?.features || defaultConfig.site.about!.features)]
+                                    features.splice(i, 1)
+                                    setSite({ ...site, about: { ...defaultConfig.site.about!, ...site.about, features } })
+                                    markChanged()
+                                  }}
+                                  className="p-1 text-rose-400 hover:text-rose-600"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                              <input
+                                type="text"
+                                value={feat.description}
+                                onChange={e => {
+                                  const features = [...(site.about?.features || defaultConfig.site.about!.features)]
+                                  features[i] = { ...features[i], description: e.target.value }
+                                  setSite({ ...site, about: { ...defaultConfig.site.about!, ...site.about, features } })
+                                  markChanged()
+                                }}
+                                placeholder="Descripcion corta"
+                                className="w-full px-3 py-1.5 rounded-lg border border-cream-200 text-sm"
+                              />
+                            </div>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const features = [...(site.about?.features || defaultConfig.site.about!.features), { icon: 'Heart', title: '', description: '' }]
+                              setSite({ ...site, about: { ...defaultConfig.site.about!, ...site.about, features } })
+                              markChanged()
+                            }}
+                            className="flex items-center gap-1 text-sm text-rose-600 hover:text-rose-700 font-medium"
+                          >
+                            <Plus className="w-4 h-4" /> Agregar feature
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Gallery images */}
+                      <div>
+                        <label className="block text-sm font-medium text-rose-700 mb-2">Imagenes de la galeria (4)</label>
+                        <div className="grid grid-cols-2 gap-3">
+                          {[0, 1, 2, 3].map(i => (
+                            <ImageUploader
+                              key={i}
+                              label={`Imagen ${i + 1}`}
+                              value={(site.about?.images || defaultConfig.site.about!.images)[i] || ''}
+                              onChange={url => {
+                                const images = [...(site.about?.images || defaultConfig.site.about!.images)]
+                                images[i] = url
+                                setSite({ ...site, about: { ...defaultConfig.site.about!, ...site.about, images } })
+                                markChanged()
+                              }}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ── Contenido del Footer ── */}
+                <div className="border-t border-cream-200 pt-6 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setFooterOpen(!footerOpen)}
+                    className="w-full flex items-center justify-between text-left"
+                  >
+                    <h3 className="font-display text-lg font-semibold text-rose-800">
+                      Contenido del Footer
+                    </h3>
+                    {footerOpen ? <ChevronDown className="w-5 h-5 text-nude-400" /> : <ChevronRight className="w-5 h-5 text-nude-400" />}
+                  </button>
+                  {footerOpen && (
+                    <div className="mt-4 space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-rose-700 mb-1">Descripcion del footer</label>
+                        <p className="text-xs text-nude-400 mb-2">Texto que aparece debajo del nombre en el pie de pagina (despues del slogan)</p>
+                        <textarea
+                          value={site.footer?.description || defaultConfig.site.footer!.description}
+                          onChange={e => { setSite({ ...site, footer: { description: e.target.value } }); markChanged() }}
+                          rows={3}
+                          className="w-full px-4 py-3 rounded-xl border border-cream-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-200 outline-none resize-none"
+                          placeholder="Transformá tu cuerpo con clases personalizadas de Pilates Reformer."
+                        />
+                      </div>
                     </div>
                   )}
                 </div>

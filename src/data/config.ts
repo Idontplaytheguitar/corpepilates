@@ -1,3 +1,30 @@
+export interface HeroContent {
+  eyebrow: string
+  description: string
+  ctaPrimary: string
+  ctaSecondary: string
+  featurePills: string[]
+  image?: string
+}
+
+export interface AboutFeature {
+  icon: string
+  title: string
+  description: string
+}
+
+export interface AboutContent {
+  eyebrow: string
+  heading: string
+  description: string
+  features: AboutFeature[]
+  images: string[]
+}
+
+export interface FooterContent {
+  description: string
+}
+
 export interface SiteConfig {
   siteName: string
   tagline: string
@@ -17,6 +44,9 @@ export interface SiteConfig {
     titular: string
   }
   reglamento?: string
+  hero?: HeroContent
+  about?: AboutContent
+  footer?: FooterContent
 }
 
 export interface ProductConfig {
@@ -201,6 +231,33 @@ export const defaultConfig: FullConfig = {
     packsEnabled: true,
     mercadopagoEnabled: true,
     singleClassEnabled: true,
+    hero: {
+      eyebrow: 'Pilates Reformer para todos',
+      description: 'Fortalecé tu core, cuidá tu columna y transformá tu cuerpo. Clases personalizadas con equipos profesionales Reformer.',
+      ctaPrimary: 'Ver Planes',
+      ctaSecondary: 'Reservar Clase',
+      featurePills: ['Cuidá tu columna', 'Fortalecé tu core', 'Ganá fuerza y flexibilidad'],
+    },
+    about: {
+      eyebrow: 'Sobre Nosotros',
+      heading: 'Pilates Reformer',
+      description: 'El Pilates Reformer es una modalidad que utiliza una cama especial con resortes que regulan la tensión, simulando el levantamiento de peso de forma controlada y segura para tus articulaciones.\n\nLa idea principal es trabajar el músculo profundo del abdomen (el famoso core) para cuidar la columna vertebral y mejorar la postura. Además, trabajamos piernas, brazos y espalda para generar más fuerza y tonificación muscular.\n\nCon clases personalizadas y atención al detalle, te acompañamos en tu transformación física respetando los tiempos de tu cuerpo.',
+      features: [
+        { icon: 'Heart', title: 'Cuidá tu Columna', description: 'Protección y fortalecimiento' },
+        { icon: 'Activity', title: 'Core Fuerte', description: 'Músculo profundo del abdomen' },
+        { icon: 'Target', title: 'Postura Correcta', description: 'Alineación corporal' },
+        { icon: 'Award', title: 'Instructora Certificada', description: 'Clases personalizadas' },
+      ],
+      images: [
+        'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=400&h=600&fit=crop',
+        'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=400&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?w=400&h=400&fit=crop',
+        'https://images.unsplash.com/photo-1574680096145-d05b474e2155?w=400&h=600&fit=crop',
+      ],
+    },
+    footer: {
+      description: 'Transformá tu cuerpo con clases personalizadas de Pilates Reformer.',
+    },
   },
   booking: {
     enabled: true,

@@ -11,10 +11,11 @@ export default async function Home() {
 
   return (
     <>
-      <Hero 
-        siteName={config.site.siteName} 
+      <Hero
+        siteName={config.site.siteName}
         bookingEnabled={config.booking?.enabled}
         mercadopagoEnabled={config.site.mercadopagoEnabled !== false}
+        content={config.site.hero}
       />
       <ServicesSection 
         services={config.services} 
@@ -31,7 +32,7 @@ export default async function Home() {
         mercadopagoEnabled={config.site.mercadopagoEnabled !== false}
         aliasConfig={config.site.aliasConfig}
       />
-      <AboutSection />
+      <AboutSection content={config.site.about} />
     </>
   )
 }
